@@ -1,0 +1,29 @@
+{
+  "name": "walkingtalking_content",
+  "version": "1.0.0",
+  "description": "Daily content generator for WalkingTalking iOS app",
+  "main": "api/generate-content.ts",
+  "scripts": {
+    "deploy": "npx vercel --prod"
+  },
+  "keywords": [
+    "english-learning",
+    "content-generator",
+    "vercel"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/text-to-speech": "^6.4.0",
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.78.0",
+    "axios": "^1.13.1",
+    "cheerio": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "@vercel/node": "^5.5.3",
+    "typescript": "^5.9.3",
+    "vercel": "^48.8.0"
+  }
+}
