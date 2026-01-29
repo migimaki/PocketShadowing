@@ -1,15 +1,15 @@
 //
-//  WalkingTalkingTests.swift
-//  WalkingTalkingTests
+//  PocketShadowingTests.swift
+//  PocketShadowingTests
 //
 //  Created by KEISUKE YANAGISAWA on 2025/10/30.
 //
 
 import XCTest
 import AVFoundation
-@testable import WalkingTalking
+@testable import PocketShadowing
 
-final class WalkingTalkingTests: XCTestCase {
+final class PocketShadowingTests: XCTestCase {
 
     // MARK: - Sentence Tests
 

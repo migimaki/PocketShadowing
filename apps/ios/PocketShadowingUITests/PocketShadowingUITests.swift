@@ -1,13 +1,13 @@
 //
-//  WalkingTalkingUITests.swift
-//  WalkingTalkingUITests
+//  PocketShadowingUITests.swift
+//  PocketShadowingUITests
 //
 //  Created by KEISUKE YANAGISAWA on 2025/10/30.
 //
 
 import XCTest
 
-final class WalkingTalkingUITests: XCTestCase {
+final class PocketShadowingUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

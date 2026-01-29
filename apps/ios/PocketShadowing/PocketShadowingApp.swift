@@ -1,6 +1,6 @@
 //
-//  WalkingTalkingApp.swift
-//  WalkingTalking
+//  PocketShadowingApp.swift
+//  PocketShadowing
 //
 //  Created by KEISUKE YANAGISAWA on 2025/10/30.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct WalkingTalkingApp: App {
+struct PocketShadowingApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Channel.self,

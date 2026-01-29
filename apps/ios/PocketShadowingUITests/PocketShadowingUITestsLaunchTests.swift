@@ -1,13 +1,13 @@
 //
-//  WalkingTalkingUITestsLaunchTests.swift
-//  WalkingTalkingUITests
+//  PocketShadowingUITestsLaunchTests.swift
+//  PocketShadowingUITests
 //
 //  Created by KEISUKE YANAGISAWA on 2025/10/30.
 //
 
 import XCTest
 
-final class WalkingTalkingUITestsLaunchTests: XCTestCase {
+final class PocketShadowingUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

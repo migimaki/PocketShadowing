@@ -33,25 +33,25 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		819760C72EB3A03100F5483F /* WalkingTalking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WalkingTalking.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		819760D62EB3A03300F5483F /* WalkingTalkingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WalkingTalkingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		819760E02EB3A03300F5483F /* WalkingTalkingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WalkingTalkingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		819760C72EB3A03100F5483F /* PocketShadowing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PocketShadowing.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		819760D62EB3A03300F5483F /* PocketShadowingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketShadowingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		819760E02EB3A03300F5483F /* PocketShadowingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketShadowingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		819760C92EB3A03100F5483F /* WalkingTalking */ = {
+		819760C92EB3A03100F5483F /* PocketShadowing */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = WalkingTalking;
+			path = PocketShadowing;
 			sourceTree = "<group>";
 		};
-		819760D92EB3A03300F5483F /* WalkingTalkingTests */ = {
+		819760D92EB3A03300F5483F /* PocketShadowingTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = WalkingTalkingTests;
+			path = PocketShadowingTests;
 			sourceTree = "<group>";
 		};
-		819760E32EB3A03300F5483F /* WalkingTalkingUITests */ = {
+		819760E32EB3A03300F5483F /* PocketShadowingUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = WalkingTalkingUITests;
+			path = PocketShadowingUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -97,9 +97,9 @@
 		819760BE2EB3A03100F5483F = {
 			isa = PBXGroup;
 			children = (
-				819760C92EB3A03100F5483F /* WalkingTalking */,
-				819760D92EB3A03300F5483F /* WalkingTalkingTests */,
-				819760E32EB3A03300F5483F /* WalkingTalkingUITests */,
+				819760C92EB3A03100F5483F /* PocketShadowing */,
+				819760D92EB3A03300F5483F /* PocketShadowingTests */,
+				819760E32EB3A03300F5483F /* PocketShadowingUITests */,
 				812053B52EBF31E700A53A11 /* Frameworks */,
 				819760C82EB3A03100F5483F /* Products */,
 			);
@@ -108,9 +108,9 @@
 		819760C82EB3A03100F5483F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				819760C72EB3A03100F5483F /* WalkingTalking.app */,
-				819760D62EB3A03300F5483F /* WalkingTalkingTests.xctest */,
-				819760E02EB3A03300F5483F /* WalkingTalkingUITests.xctest */,
+				819760C72EB3A03100F5483F /* PocketShadowing.app */,
+				819760D62EB3A03300F5483F /* PocketShadowingTests.xctest */,
+				819760E02EB3A03300F5483F /* PocketShadowingUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -118,9 +118,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		819760C62EB3A03100F5483F /* WalkingTalking */ = {
+		819760C62EB3A03100F5483F /* PocketShadowing */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 819760EA2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "WalkingTalking" */;
+			buildConfigurationList = 819760EA2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "PocketShadowing" */;
 			buildPhases = (
 				819760C32EB3A03100F5483F /* Sources */,
 				819760C42EB3A03100F5483F /* Frameworks */,
@@ -131,9 +131,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				819760C92EB3A03100F5483F /* WalkingTalking */,
+				819760C92EB3A03100F5483F /* PocketShadowing */,
 			);
-			name = WalkingTalking;
+			name = PocketShadowing;
 			packageProductDependencies = (
 				812053AB2EBF31DC00A53A11 /* Auth */,
 				812053AD2EBF31DC00A53A11 /* Functions */,
@@ -143,12 +143,12 @@
 				812053B62EBF31E700A53A11 /* Supabase */,
 			);
 			productName = WalkingTalking;
-			productReference = 819760C72EB3A03100F5483F /* WalkingTalking.app */;
+			productReference = 819760C72EB3A03100F5483F /* PocketShadowing.app */;
 			productType = "com.apple.product-type.application";
 		};
-		819760D52EB3A03300F5483F /* WalkingTalkingTests */ = {
+		819760D52EB3A03300F5483F /* PocketShadowingTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 819760ED2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "WalkingTalkingTests" */;
+			buildConfigurationList = 819760ED2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "PocketShadowingTests" */;
 			buildPhases = (
 				819760D22EB3A03300F5483F /* Sources */,
 				819760D32EB3A03300F5483F /* Frameworks */,
@@ -160,18 +160,18 @@
 				819760D82EB3A03300F5483F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				819760D92EB3A03300F5483F /* WalkingTalkingTests */,
+				819760D92EB3A03300F5483F /* PocketShadowingTests */,
 			);
-			name = WalkingTalkingTests;
+			name = PocketShadowingTests;
 			packageProductDependencies = (
 			);
 			productName = WalkingTalkingTests;
-			productReference = 819760D62EB3A03300F5483F /* WalkingTalkingTests.xctest */;
+			productReference = 819760D62EB3A03300F5483F /* PocketShadowingTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		819760DF2EB3A03300F5483F /* WalkingTalkingUITests */ = {
+		819760DF2EB3A03300F5483F /* PocketShadowingUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 819760F02EB3A03300F5483F /* Build configuration list for PBXNativeTarget "WalkingTalkingUITests" */;
+			buildConfigurationList = 819760F02EB3A03300F5483F /* Build configuration list for PBXNativeTarget "PocketShadowingUITests" */;
 			buildPhases = (
 				819760DC2EB3A03300F5483F /* Sources */,
 				819760DD2EB3A03300F5483F /* Frameworks */,
@@ -183,13 +183,13 @@
 				819760E22EB3A03300F5483F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				819760E32EB3A03300F5483F /* WalkingTalkingUITests */,
+				819760E32EB3A03300F5483F /* PocketShadowingUITests */,
 			);
-			name = WalkingTalkingUITests;
+			name = PocketShadowingUITests;
 			packageProductDependencies = (
 			);
 			productName = WalkingTalkingUITests;
-			productReference = 819760E02EB3A03300F5483F /* WalkingTalkingUITests.xctest */;
+			productReference = 819760E02EB3A03300F5483F /* PocketShadowingUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -215,7 +215,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 819760C22EB3A03100F5483F /* Build configuration list for PBXProject "WalkingTalking" */;
+			buildConfigurationList = 819760C22EB3A03100F5483F /* Build configuration list for PBXProject "PocketShadowing" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -232,9 +232,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				819760C62EB3A03100F5483F /* WalkingTalking */,
-				819760D52EB3A03300F5483F /* WalkingTalkingTests */,
-				819760DF2EB3A03300F5483F /* WalkingTalkingUITests */,
+				819760C62EB3A03100F5483F /* PocketShadowing */,
+				819760D52EB3A03300F5483F /* PocketShadowingTests */,
+				819760DF2EB3A03300F5483F /* PocketShadowingUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -290,12 +290,12 @@
 /* Begin PBXTargetDependency section */
 		819760D82EB3A03300F5483F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 819760C62EB3A03100F5483F /* WalkingTalking */;
+			target = 819760C62EB3A03100F5483F /* PocketShadowing */;
 			targetProxy = 819760D72EB3A03300F5483F /* PBXContainerItemProxy */;
 		};
 		819760E22EB3A03300F5483F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 819760C62EB3A03100F5483F /* WalkingTalking */;
+			target = 819760C62EB3A03100F5483F /* PocketShadowing */;
 			targetProxy = 819760E12EB3A03300F5483F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -432,7 +432,7 @@
 				DEVELOPMENT_TEAM = AFU8AWBV43;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = KeepTalking;
+				INFOPLIST_KEY_CFBundleDisplayName = PocketShadowing;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "WalkingTalking needs microphone access to record your pronunciation practice and help you learn English.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "WalkingTalking uses speech recognition to show you what you said and help improve your pronunciation.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -446,7 +446,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.designjisso.WalkingTalking;
+				PRODUCT_BUNDLE_IDENTIFIER = com.designjisso.PocketShadowing;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -468,7 +468,7 @@
 				DEVELOPMENT_TEAM = AFU8AWBV43;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = KeepTalking;
+				INFOPLIST_KEY_CFBundleDisplayName = PocketShadowing;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "WalkingTalking needs microphone access to record your pronunciation practice and help you learn English.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "WalkingTalking uses speech recognition to show you what you said and help improve your pronunciation.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -482,7 +482,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.designjisso.WalkingTalking;
+				PRODUCT_BUNDLE_IDENTIFIER = com.designjisso.PocketShadowing;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -512,7 +512,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WalkingTalking.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WalkingTalking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PocketShadowing.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PocketShadowing";
 			};
 			name = Debug;
 		};
@@ -534,7 +534,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WalkingTalking.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WalkingTalking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PocketShadowing.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PocketShadowing";
 			};
 			name = Release;
 		};
@@ -581,7 +581,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		819760C22EB3A03100F5483F /* Build configuration list for PBXProject "WalkingTalking" */ = {
+		819760C22EB3A03100F5483F /* Build configuration list for PBXProject "PocketShadowing" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				819760E82EB3A03300F5483F /* Debug */,
@@ -590,7 +590,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		819760EA2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "WalkingTalking" */ = {
+		819760EA2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "PocketShadowing" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				819760EB2EB3A03300F5483F /* Debug */,
@@ -599,7 +599,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		819760ED2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "WalkingTalkingTests" */ = {
+		819760ED2EB3A03300F5483F /* Build configuration list for PBXNativeTarget "PocketShadowingTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				819760EE2EB3A03300F5483F /* Debug */,
@@ -608,7 +608,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		819760F02EB3A03300F5483F /* Build configuration list for PBXNativeTarget "WalkingTalkingUITests" */ = {
+		819760F02EB3A03300F5483F /* Build configuration list for PBXNativeTarget "PocketShadowingUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				819760F12EB3A03300F5483F /* Debug */,
