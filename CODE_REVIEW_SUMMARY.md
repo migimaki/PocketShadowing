@@ -208,10 +208,11 @@ All **critical security issues** and **high-priority reliability fixes** have be
 
 ## 📚 Documentation Created
 
-1. [MANUAL_SETUP_INSTRUCTIONS.md](apps/ios/MANUAL_SETUP_INSTRUCTIONS.md) - iOS Xcode configuration
-2. [ROTATE_SUPABASE_KEY.md](apps/ios/ROTATE_SUPABASE_KEY.md) - Key rotation guide
+1. [MANUAL_SETUP_INSTRUCTIONS.md](apps/ios/docs/MANUAL_SETUP_INSTRUCTIONS.md) - iOS Xcode configuration
+2. [ROTATE_SUPABASE_KEY.md](apps/ios/docs/ROTATE_SUPABASE_KEY.md) - Key rotation guide
 3. [Config.example.xcconfig](apps/ios/Config.example.xcconfig) - Template for developers
 4. [REMAINING_IMPROVEMENTS.md](apps/content-api/REMAINING_IMPROVEMENTS.md) - Future enhancements guide
+5. [iOS Docs Index](apps/ios/docs/INDEX.md) - Complete iOS documentation index
 
 ---
 
