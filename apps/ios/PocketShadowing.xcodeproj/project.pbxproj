@@ -33,6 +33,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		81268A3C2F2D63A00068E14E /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		819760C72EB3A03100F5483F /* PocketShadowing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PocketShadowing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		819760D62EB3A03300F5483F /* PocketShadowingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketShadowingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		819760E02EB3A03300F5483F /* PocketShadowingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketShadowingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -97,6 +98,7 @@
 		819760BE2EB3A03100F5483F = {
 			isa = PBXGroup;
 			children = (
+				81268A3C2F2D63A00068E14E /* Config.xcconfig */,
 				819760C92EB3A03100F5483F /* PocketShadowing */,
 				819760D92EB3A03300F5483F /* PocketShadowingTests */,
 				819760E32EB3A03300F5483F /* PocketShadowingUITests */,
@@ -424,6 +426,7 @@
 		};
 		819760EB2EB3A03300F5483F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 81268A3C2F2D63A00068E14E /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -460,6 +463,7 @@
 		};
 		819760EC2EB3A03300F5483F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 81268A3C2F2D63A00068E14E /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

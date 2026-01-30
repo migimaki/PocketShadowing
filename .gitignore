@@ -20,6 +20,9 @@
 # iOS / Xcode (apps/ios)
 # ============================================
 
+## Configuration files with secrets (NEVER COMMIT)
+apps/ios/Config.xcconfig
+
 ## User settings
 xcuserdata/
 

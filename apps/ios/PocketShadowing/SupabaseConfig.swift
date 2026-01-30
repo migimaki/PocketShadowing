@@ -1,18 +1,29 @@
 //
 //  SupabaseConfig.swift
-//  WalkingTalking
+//  PocketShadowing
 //
-//  Created by Claude Code on 2025/11/01.
+//  Configuration loaded from Info.plist (injected via Config.xcconfig at build time)
+//  See Config.example.xcconfig for setup instructions
 //
 
 import Foundation
 
 struct SupabaseConfig {
-    // TODO: Replace with your actual Supabase project URL and anon key
-    // You can find these in your Supabase Dashboard > Project Settings > API
-    static let supabaseURL = "https://tfyanffhqxiasxpbjgna.supabase.co"
-    static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmeWFuZmZocXhpYXN4cGJqZ25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MjczNDEsImV4cCI6MjA3NzUwMzM0MX0.U_Fw44Y_RfO8EAfz7Xil_ED61w_JCbVwFmkURrl7Cno"
+    static let supabaseURL: String = {
+        guard let url = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+              !url.isEmpty,
+              !url.contains("$") else { // Check for unexpanded variable
+            fatalError("SUPABASE_URL not configured. Did you create Config.xcconfig and link it in Xcode?")
+        }
+        return url
+    }()
 
-    // For production, consider using a .plist or environment variables
-    // Never commit real keys to git!
+    static let supabaseAnonKey: String = {
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
+              !key.isEmpty,
+              !key.contains("your_") else { // Check for placeholder
+            fatalError("SUPABASE_ANON_KEY not configured. Did you create Config.xcconfig and link it in Xcode?")
+        }
+        return key
+    }()
 }
