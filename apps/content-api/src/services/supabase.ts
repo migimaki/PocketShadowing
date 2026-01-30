@@ -439,33 +439,67 @@ export async function storeLessonData(
   } catch (error) {
     logger.error("Error storing lesson data", error);
 
+    const cleanupErrors: string[] = [];
+
     // Rollback: Delete lesson if it was created
     if (lessonId) {
-      logger.warn("Rolling back: Deleting lesson due to error", { lessonId });
+      logger.warn("Rolling back: Deleting lesson due to error", {
+        lessonId,
+        uploadedFilesCount: uploadedFiles.length,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+
       try {
         await supabase.from("lessons").delete().eq("id", lessonId);
-        logger.info("Lesson rolled back successfully", { lessonId });
+        logger.info("✓ Lesson rolled back successfully", { lessonId });
       } catch (rollbackError) {
-        logger.error("Failed to rollback lesson", rollbackError);
+        const rollbackMsg = `Failed to rollback lesson ${lessonId}: ${
+          rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
+        }`;
+        logger.error(rollbackMsg, { lessonId });
+        cleanupErrors.push(rollbackMsg);
       }
 
       // Attempt to clean up uploaded audio files
       if (uploadedFiles.length > 0) {
-        logger.warn("Cleaning up uploaded audio files", { count: uploadedFiles.length });
+        logger.warn("Cleaning up uploaded audio files", {
+          count: uploadedFiles.length,
+          files: uploadedFiles,
+        });
+
         try {
-          await supabase.storage.from("audio-files").remove(uploadedFiles);
-          logger.info("Audio files cleaned up successfully");
+          const { error: storageError } = await supabase.storage
+            .from("audio-files")
+            .remove(uploadedFiles);
+
+          if (storageError) {
+            throw storageError;
+          }
+
+          logger.info("✓ Audio files cleaned up successfully", {
+            count: uploadedFiles.length,
+          });
         } catch (cleanupError) {
-          logger.error("Failed to cleanup audio files", cleanupError);
+          const cleanupMsg = `Failed to cleanup ${uploadedFiles.length} audio files: ${
+            cleanupError instanceof Error ? cleanupError.message : String(cleanupError)
+          }`;
+          logger.error(cleanupMsg, { files: uploadedFiles });
+          cleanupErrors.push(cleanupMsg);
+
+          // TODO: Consider implementing a background job to clean up orphaned files
+          // Query: SELECT * FROM storage.objects WHERE created_at < NOW() - INTERVAL '1 hour'
+          //        AND NOT EXISTS (SELECT 1 FROM sentences WHERE audio_url LIKE '%' || name || '%')
         }
       }
     }
 
-    throw new Error(
-      `Failed to store data in Supabase: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`
-    );
+    // Throw error with cleanup status
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const fullMessage = cleanupErrors.length > 0
+      ? `${errorMessage}. Cleanup issues: ${cleanupErrors.join('; ')}`
+      : errorMessage;
+
+    throw new Error(`Failed to store data in Supabase: ${fullMessage}`);
   }
 }
 
