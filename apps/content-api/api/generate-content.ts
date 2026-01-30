@@ -93,7 +93,7 @@ export default async function handler(
     const languages: LanguageCode[] = ['en', 'ja', 'fr'];
     const results: SeriesGenerationResult['results'] = [];
     const errors: string[] = [];
-    const startTime = Date.now(); // Track execution time for timeout monitoring
+    const generationStartTime = Date.now(); // Track execution time for timeout monitoring
     const VERCEL_TIMEOUT_MS = 600000; // 10 minutes
     const TIMEOUT_BUFFER_MS = 60000; // 1 minute buffer for cleanup
 
@@ -169,7 +169,7 @@ export default async function handler(
         });
 
         // Timeout protection: check if we have enough time remaining
-        const elapsedTime = Date.now() - startTime;
+        const elapsedTime = Date.now() - generationStartTime;
         const remainingTime = VERCEL_TIMEOUT_MS - elapsedTime;
         const estimatedTimeNeeded = estimatedTTSTimeSeconds * 1000; // Convert to ms
 
