@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 import { generateMultiLanguageContent } from '../src/services/gemini';
 import { generateAudioFiles } from '../src/services/gemini-tts';
 import { storeLessonData, checkIfTodayContentExists, getDefaultSeriesId, getSeriesById, getOrCreateChannel, getAllActiveSeries, getSeriesByBatch, storeGenerationLog } from '../src/services/supabase';
@@ -7,6 +8,29 @@ import { Logger } from '../src/utils/logger';
 import crypto from 'crypto';
 
 const logger = new Logger('GenerateContent');
+
+/**
+ * Request parameter validation schema
+ * Ensures API inputs are safe and well-formed
+ */
+const requestSchema = z.object({
+  series_ids: z
+    .array(z.string().uuid('Invalid UUID format for series_id'))
+    .max(20, 'Maximum 20 series IDs allowed')
+    .optional(),
+  batch: z
+    .number()
+    .int('Batch must be an integer')
+    .min(1, 'Batch must be >= 1')
+    .max(100, 'Batch must be <= 100')
+    .optional(),
+}).refine(
+  (data) => {
+    // At least one parameter should be provided, or neither (for default behavior)
+    return true;
+  },
+  { message: 'Invalid request parameters' }
+);
 
 /**
  * Main Vercel serverless function
@@ -58,20 +82,40 @@ export default async function handler(
       }
     }
 
-    // Extract series_ids or batch from request
+    // Extract and validate series_ids or batch from request
     const requestBody = req.body || {};
-    const batchParam = requestBody.batch || req.query.batch;
-    const seriesIdsParam = requestBody.series_ids || req.query.series_ids;
+    const rawBatch = requestBody.batch || req.query.batch;
+    const rawSeriesIds = requestBody.series_ids || req.query.series_ids;
+
+    // Validate input parameters
+    const validationResult = requestSchema.safeParse({
+      series_ids: rawSeriesIds ? (Array.isArray(rawSeriesIds) ? rawSeriesIds : [rawSeriesIds]) : undefined,
+      batch: rawBatch ? parseInt(String(rawBatch), 10) : undefined,
+    });
+
+    if (!validationResult.success) {
+      logger.warn('Invalid request parameters', {
+        errors: validationResult.error.format(),
+      });
+      res.status(400).json({
+        success: false,
+        error: 'Invalid request parameters',
+        message: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; '),
+      } as GenerationResult);
+      return;
+    }
+
+    const { series_ids: seriesIdsParam, batch: batchParam } = validationResult.data;
 
     let seriesIds: string[];
-    if (seriesIdsParam) {
+    if (seriesIdsParam && seriesIdsParam.length > 0) {
       // Explicit series_ids provided (manual trigger)
-      seriesIds = Array.isArray(seriesIdsParam) ? seriesIdsParam : [seriesIdsParam];
+      seriesIds = seriesIdsParam;
       logger.info('Using provided series IDs', { seriesIds });
-    } else if (batchParam) {
+    } else if (batchParam !== undefined) {
       // Batch number provided (cron trigger)
       logger.info('Fetching series for batch', { batch: batchParam });
-      const allSeries = await getSeriesByBatch(parseInt(batchParam));
+      const allSeries = await getSeriesByBatch(batchParam);
       seriesIds = allSeries.map(s => s.id);
       logger.info(`Found ${allSeries.length} series in batch ${batchParam}`, {
         seriesIds,
