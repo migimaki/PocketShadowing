@@ -41,6 +41,7 @@ export default async function handler(
   res: VercelResponse
 ): Promise<void> {
   const startTime = Date.now();
+  const requestId = crypto.randomUUID(); // Unique ID for idempotency tracking
 
   // Determine trigger type early (needed for logging in both success and error cases)
   const authHeader = req.headers.authorization;
@@ -48,7 +49,7 @@ export default async function handler(
   const triggerType: 'cron' | 'manual' | 'api' = isCronJob ? 'cron' : 'manual';
 
   try {
-    logger.info('=== Starting content generation ===');
+    logger.info('=== Starting content generation ===', { requestId, triggerType });
 
     // Verify this is a POST request or cron trigger
     if (req.method !== 'POST' && req.method !== 'GET') {
@@ -176,20 +177,31 @@ export default async function handler(
           logger.debug(`Channel ready for ${language}: ${channelId}`);
         }
 
-        // Check which languages need content for this series
+        // IDEMPOTENCY CHECK: Verify which languages need content for this series
+        // This prevents duplicate generation if the function is triggered multiple times
         const existingLanguages: LanguageCode[] = [];
         for (const language of languages) {
           const channelId = seriesChannels[language];
           const contentExists = await checkIfTodayContentExists(language, channelId);
           if (contentExists) {
             existingLanguages.push(language);
+            logger.info(`Idempotency: Content already exists for ${language}`, {
+              requestId,
+              seriesId,
+              channelId,
+              date: new Date().toISOString().split('T')[0],
+            });
           }
         }
 
         const languagesToGenerate = languages.filter(lang => !existingLanguages.includes(lang));
 
         if (languagesToGenerate.length === 0) {
-          logger.info(`Content already exists for series ${series.name}, skipping`);
+          logger.info(`Idempotency: All content exists for series ${series.name}, skipping`, {
+            requestId,
+            seriesId,
+            existingLanguages,
+          });
           continue;
         }
 
@@ -282,7 +294,19 @@ export default async function handler(
 
           } catch (langError) {
             const errorMsg = `Failed to generate ${language.toUpperCase()} for series ${series.name}: ${langError instanceof Error ? langError.message : 'Unknown error'}`;
-            logger.error(errorMsg);
+
+            // Check if this is a duplicate content error (idempotency protection)
+            if (langError instanceof Error && langError.message.includes('already exists')) {
+              logger.warn(`Idempotency: Duplicate content detected for ${language}`, {
+                requestId,
+                seriesId,
+                language,
+                message: langError.message,
+              });
+            } else {
+              logger.error(errorMsg, { requestId, seriesId, language });
+            }
+
             errors.push(errorMsg);
             // Continue with next language instead of failing entire series
             continue;
