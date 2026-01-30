@@ -21,15 +21,6 @@ function getSupabaseClient(): SupabaseClient {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
-  // Debug logging
-  logger.debug("Environment check", {
-    hasSupabaseUrl: !!supabaseUrl,
-    hasSupabaseKey: !!supabaseKey,
-    urlLength: supabaseUrl?.length || 0,
-    keyLength: supabaseKey?.length || 0,
-    availableEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE')),
-  });
-
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
       "SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables are required"

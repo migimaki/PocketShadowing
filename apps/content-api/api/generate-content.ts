@@ -26,15 +26,6 @@ export default async function handler(
   try {
     logger.info('=== Starting content generation ===');
 
-    // Debug: Log all environment variables
-    logger.info('Environment variables check', {
-      hasSupabaseUrl: !!process.env.SUPABASE_URL,
-      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
-      hasGeminiKey: !!process.env.GEMINI_API_KEY,
-      hasTtsCredentials: !!process.env.GOOGLE_CLOUD_TTS_CREDENTIALS,
-      allEnvKeys: Object.keys(process.env).sort(),
-    });
-
     // Verify this is a POST request or cron trigger
     if (req.method !== 'POST' && req.method !== 'GET') {
       res.status(405).json({
@@ -52,14 +43,6 @@ export default async function handler(
       // Verify manual trigger authorization
       const providedSecret = req.headers['x-api-secret'] || req.query.secret;
       const apiSecret = process.env.API_SECRET;
-
-      // Debug logging
-      logger.info('Auth debug', {
-        hasApiSecret: !!apiSecret,
-        hasProvidedSecret: !!providedSecret,
-        headerKeys: Object.keys(req.headers),
-        queryKeys: Object.keys(req.query || {}),
-      });
 
       if (!apiSecret || providedSecret !== apiSecret) {
         logger.warn('Unauthorized access attempt', {
