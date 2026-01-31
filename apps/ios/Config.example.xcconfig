@@ -2,13 +2,15 @@
 // Config.example.xcconfig
 // PocketShadowing
 //
-// INSTRUCTIONS:
-// 1. Copy this file to Config.xcconfig (same directory)
-// 2. Replace the placeholder values with your actual Supabase credentials
-// 3. Never commit Config.xcconfig to git (it's in .gitignore)
+// ⚠️ DEPRECATED - This approach is no longer used
+//
+// The project now uses SupabaseConfig.generated.swift for credential management.
+// See apps/ios/docs/MANUAL_SETUP_INSTRUCTIONS.md for current setup instructions.
+//
+// This file is kept for reference only.
 //
 
-// Supabase Configuration
+// Supabase Configuration (not used)
 // Get these from: https://app.supabase.com/project/_/settings/api
 SUPABASE_URL = https:/$()/your-project-id.supabase.co
 SUPABASE_ANON_KEY = your_supabase_anon_key_here

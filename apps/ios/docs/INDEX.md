@@ -25,10 +25,15 @@ New to the project? Start here:
 2. Follow [MANUAL_SETUP_INSTRUCTIONS.md](MANUAL_SETUP_INSTRUCTIONS.md) to configure Xcode
 3. Review [ROTATE_SUPABASE_KEY.md](ROTATE_SUPABASE_KEY.md) for security best practices
 
-## 📁 Configuration Files (in parent directory)
+## 📁 Configuration Files
 
-- `Config.example.xcconfig` - Template for environment configuration
-- `Config.xcconfig` - Your actual config (gitignored, never commit!)
+### In PocketShadowing/ directory:
+- `SupabaseConfig.swift` - Main configuration interface (committed to git)
+- `SupabaseConfig.generated.swift` - Your actual credentials (gitignored, never commit!)
+- `SupabaseConfig.generated.swift.example` - Template for credentials file
+
+### In parent directory (deprecated):
+- `Config.example.xcconfig` - Old xcconfig approach (no longer used, kept for reference)
 
 ---
 

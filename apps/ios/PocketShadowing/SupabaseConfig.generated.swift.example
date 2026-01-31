@@ -1,0 +1,14 @@
+//
+//  SupabaseConfig.generated.swift
+//  PocketShadowing
+//
+//  ⚠️ AUTO-GENERATED - DO NOT COMMIT TO GIT
+//  Contains sensitive Supabase credentials
+//  This file is gitignored for security
+//
+
+import Foundation
+
+// These values are used by SupabaseConfig.swift
+let SUPABASE_URL_VALUE = "https://YOUR_PROJECT_ID.supabase.co"
+let SUPABASE_ANON_KEY_VALUE = "YOUR_ANON_KEY_HERE"

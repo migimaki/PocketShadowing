@@ -22,10 +22,10 @@ The anon key `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` is visible in your git hi
 4. **IMPORTANT:** Copy the new key immediately - you won't see it again!
 
 ### 3. Update Your Configuration
-1. Open `apps/ios/Config.xcconfig` (NOT the .example file)
+1. Open `apps/ios/PocketShadowing/SupabaseConfig.generated.swift`
 2. Replace the old key with the new one:
-   ```
-   SUPABASE_ANON_KEY = <paste_new_key_here>
+   ```swift
+   let SUPABASE_ANON_KEY_VALUE = "<paste_new_key_here>"
    ```
 3. Save the file
 
@@ -68,13 +68,13 @@ npm run dev
 ## 🔒 Security Best Practices Going Forward
 
 ### ✅ DO:
-- Keep `Config.xcconfig` in `.gitignore` (already done)
+- Keep `SupabaseConfig.generated.swift` in `.gitignore` (already done)
 - Use different keys for dev/staging/production
 - Rotate keys every 90 days
 - Use Row Level Security (RLS) policies in Supabase
 
 ### ❌ DON'T:
-- Never commit `Config.xcconfig` to git
+- Never commit `SupabaseConfig.generated.swift` to git
 - Never share keys in Slack/Discord/email
 - Never hardcode keys in source files
 - Never use the service_role key in client apps
@@ -84,23 +84,23 @@ npm run dev
 ## 📋 Checklist
 
 - [ ] Rotated Supabase anon key in dashboard
-- [ ] Updated `apps/ios/Config.xcconfig` with new key
+- [ ] Updated `apps/ios/SupabaseConfig.generated.swift` with new key
 - [ ] Tested iOS app builds and connects successfully
 - [ ] Verified old key no longer works
-- [ ] Checked `.gitignore` includes `Config.xcconfig`
-- [ ] Committed all changes (except Config.xcconfig)
+- [ ] Checked `.gitignore` includes `SupabaseConfig.generated.swift`
+- [ ] Committed all changes (except SupabaseConfig.generated.swift)
 
 ---
 
 ## 🆘 Troubleshooting
 
 ### "Invalid API key" error in iOS app
-- Check `Config.xcconfig` has the correct new key
+- Check `SupabaseConfig.generated.swift` has the correct new key
 - Clean build folder: **Product → Clean Build Folder** (⌘⇧K)
 - Rebuild: **Product → Build** (⌘B)
 
 ### "Connection refused" error
-- Verify `SUPABASE_URL` is correct in `Config.xcconfig`
+- Verify `SUPABASE_URL` is correct in `SupabaseConfig.generated.swift`
 - Check network connectivity
 - Verify Supabase project is not paused
 
