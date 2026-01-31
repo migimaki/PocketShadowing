@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { generateMultiLanguageContent } from '../src/services/gemini';
 import { generateAudioFiles } from '../src/services/gemini-tts';
-import { storeLessonData, checkIfTodayContentExists, getDefaultSeriesId, getSeriesById, getOrCreateChannel, getAllActiveSeries, getSeriesByBatch, storeGenerationLog } from '../src/services/supabase';
+import { storeLessonData, storeLessonDataWithSharedAudio, getPublicAudioUrl, checkIfTodayContentExists, getDefaultSeriesId, getSeriesById, getOrCreateChannel, getAllActiveSeries, getSeriesByBatch, storeGenerationLog, type SharedAudioData } from '../src/services/supabase';
 import type { GenerationResult, LanguageCode, SeriesGenerationResult } from '../src/types/index';
 import { Logger } from '../src/utils/logger';
 import crypto from 'crypto';
@@ -211,16 +211,18 @@ export default async function handler(
         });
 
         // Calculate estimated time for this series
+        // TTS is only generated for English - translations share English audio
         const sentenceCount = series.line_count || 10;
-        const ttsCallsPerLanguage = sentenceCount;
-        const totalTTSCalls = ttsCallsPerLanguage * languagesToGenerate.length;
+        const needsEnglishAudio = languagesToGenerate.includes('en');
+        const totalTTSCalls = needsEnglishAudio ? sentenceCount : 0;
         const estimatedTTSTimeSeconds = totalTTSCalls * 7; // 7 seconds per TTS call (6s min + 1s buffer)
         const estimatedTotalTimeMinutes = Math.ceil((estimatedTTSTimeSeconds + 60) / 60); // Add 1 min for content generation
 
         logger.info(`Series generation time estimate`, {
           sentences: sentenceCount,
-          languages: languagesToGenerate.length,
-          totalTTSCalls: totalTTSCalls,
+          needsEnglishAudio,
+          totalTTSCalls,
+          translationLanguages: languagesToGenerate.filter(l => l !== 'en').length,
           estimatedTimeMinutes: estimatedTotalTimeMinutes,
         });
 
@@ -252,33 +254,109 @@ export default async function handler(
         const sourceUrl = `AI Generated - ${series.name} (${new Date().toLocaleDateString('en-US')})`;
         const seriesLessons: Record<string, { lessonId: string; sentenceCount: number }> = {};
 
-        // Step 2 & 3: Generate audio and store for each language
-        for (const language of languagesToGenerate) {
+        // Shared audio data from English lesson (used by JA/FR translations)
+        let sharedAudioData: SharedAudioData[] = [];
+
+        // Step 2: Generate audio ONLY for English (the target learning language)
+        if (languagesToGenerate.includes('en')) {
           try {
-            const content = multiLangContent[language];
-            const channelId = seriesChannels[language];
+            const englishContent = multiLangContent.en;
+            const englishChannelId = seriesChannels.en;
 
-            const languageTTSCalls = content.lines.length;
-            const estimatedLanguageTimeMin = Math.ceil((languageTTSCalls * 7) / 60);
+            const ttsCalls = englishContent.lines.length;
+            const estimatedTimeMin = Math.ceil((ttsCalls * 7) / 60);
 
-            logger.info(`Generating ${languageTTSCalls} audio files for ${series.name} - ${language.toUpperCase()}`, {
-              sentenceCount: content.lines.length,
-              estimatedTimeMinutes: estimatedLanguageTimeMin,
+            logger.info(`Generating ${ttsCalls} audio files for ${series.name} - ENGLISH (target language)`, {
+              sentenceCount: englishContent.lines.length,
+              estimatedTimeMinutes: estimatedTimeMin,
             });
 
             // Generate audio files using Gemini-TTS (sentence-by-sentence with rate limiting)
-            const audioFiles = await generateAudioFiles(content.lines, language, series);
+            const audioFiles = await generateAudioFiles(englishContent.lines, 'en', series);
 
-            logger.info(`Audio files generated`, {
-              language,
+            logger.info(`English audio files generated`, {
               fileCount: audioFiles.length,
               voicesUsed: [...new Set(audioFiles.map(f => f.voiceUsed || 'unknown'))]
             });
 
-            logger.info(`Storing ${language.toUpperCase()} data in Supabase...`);
-            const lessonId = await storeLessonData(
-              content,
+            logger.info(`Storing ENGLISH data in Supabase...`);
+            const englishLessonId = await storeLessonData(
+              englishContent,
               audioFiles,
+              sourceUrl,
+              'en',
+              englishChannelId,
+              contentGroupId
+            );
+
+            seriesLessons.en = {
+              lessonId: englishLessonId,
+              sentenceCount: englishContent.lines.length
+            };
+
+            logger.info(`ENGLISH data stored successfully`, { lessonId: englishLessonId });
+
+            // Build shared audio data for translation lessons
+            sharedAudioData = audioFiles.map((f, i) => ({
+              lineIndex: i,
+              audioUrl: getPublicAudioUrl(englishChannelId, englishLessonId, i),
+              duration: f.duration,
+              voiceUsed: f.voiceUsed,
+            }));
+
+            logger.info(`Prepared shared audio data for translations`, {
+              sentenceCount: sharedAudioData.length,
+            });
+
+          } catch (enError) {
+            const errorMsg = `Failed to generate ENGLISH for series ${series.name}: ${enError instanceof Error ? enError.message : 'Unknown error'}`;
+
+            if (enError instanceof Error && enError.message.includes('already exists')) {
+              logger.warn(`Idempotency: Duplicate content detected for English`, {
+                requestId,
+                seriesId,
+                message: enError.message,
+              });
+            } else {
+              logger.error(errorMsg, { requestId, seriesId });
+            }
+
+            errors.push(errorMsg);
+            // If English fails, we can't generate translations (no audio to share)
+            // Skip to next series
+            continue;
+          }
+        }
+
+        // Step 3: Store translation lessons (JA/FR) with shared English audio
+        // No TTS generation needed - translations reference English audio URLs
+        const translationLanguages: LanguageCode[] = ['ja', 'fr'];
+
+        for (const language of translationLanguages) {
+          if (!languagesToGenerate.includes(language)) {
+            continue;
+          }
+
+          // If we don't have shared audio data (English wasn't generated), skip translations
+          if (sharedAudioData.length === 0) {
+            logger.warn(`Skipping ${language.toUpperCase()} - no English audio available to share`, {
+              seriesId,
+              seriesName: series.name,
+            });
+            continue;
+          }
+
+          try {
+            const content = multiLangContent[language];
+            const channelId = seriesChannels[language];
+
+            logger.info(`Storing ${language.toUpperCase()} translation with shared English audio...`, {
+              sentenceCount: content.lines.length,
+            });
+
+            const lessonId = await storeLessonDataWithSharedAudio(
+              content,
+              sharedAudioData,
               sourceUrl,
               language,
               channelId,
@@ -290,12 +368,11 @@ export default async function handler(
               sentenceCount: content.lines.length
             };
 
-            logger.info(`${language.toUpperCase()} data stored successfully`, { lessonId });
+            logger.info(`${language.toUpperCase()} translation stored successfully`, { lessonId });
 
           } catch (langError) {
-            const errorMsg = `Failed to generate ${language.toUpperCase()} for series ${series.name}: ${langError instanceof Error ? langError.message : 'Unknown error'}`;
+            const errorMsg = `Failed to store ${language.toUpperCase()} translation for series ${series.name}: ${langError instanceof Error ? langError.message : 'Unknown error'}`;
 
-            // Check if this is a duplicate content error (idempotency protection)
             if (langError instanceof Error && langError.message.includes('already exists')) {
               logger.warn(`Idempotency: Duplicate content detected for ${language}`, {
                 requestId,
@@ -310,13 +387,6 @@ export default async function handler(
             errors.push(errorMsg);
             // Continue with next language instead of failing entire series
             continue;
-          }
-
-          // Add delay between languages to avoid quota exhaustion
-          const isLastLanguage = languagesToGenerate.indexOf(language) === languagesToGenerate.length - 1;
-          if (!isLastLanguage) {
-            logger.info('Waiting 10 seconds before processing next language...');
-            await new Promise(resolve => setTimeout(resolve, 10000));
           }
         }
 

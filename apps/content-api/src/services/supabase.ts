@@ -580,6 +580,133 @@ export async function storeGenerationLog(
 }
 
 /**
+ * Generates a public URL for a sentence audio file
+ * Used to share English audio URLs with translation lessons
+ */
+export function getPublicAudioUrl(
+  channelId: string,
+  lessonId: string,
+  sentenceIndex: number
+): string {
+  const supabase = getSupabaseClient();
+  const storagePath = `${channelId}/${lessonId}/sentence_${sentenceIndex}.mp3`;
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("audio-files").getPublicUrl(storagePath);
+  return `${publicUrl}?v=${Date.now()}`;
+}
+
+/**
+ * Shared audio data structure for translation lessons
+ */
+export interface SharedAudioData {
+  lineIndex: number;
+  audioUrl: string;
+  duration?: number;
+  voiceUsed?: string;
+}
+
+/**
+ * Stores translation lesson that shares audio from English lesson
+ * No audio upload needed - just references English audio URLs
+ *
+ * Used for JA/FR (and future translation languages) that share English audio
+ */
+export async function storeLessonDataWithSharedAudio(
+  content: SummarizedContent,
+  sharedAudioData: SharedAudioData[],
+  sourceUrl: string,
+  language: LanguageCode,
+  channelId: string,
+  contentGroupId?: string
+): Promise<string> {
+  const supabase = getSupabaseClient();
+
+  try {
+    logger.info("Storing translation lesson with shared audio...", {
+      language,
+      channelId,
+      sentenceCount: content.lines.length,
+    });
+
+    const today = new Date().toISOString().split("T")[0];
+
+    // 1. Create lesson record
+    const lessonRecord: LessonRecord = {
+      title: content.title,
+      source_url: sourceUrl,
+      date: today,
+      language,
+      channel_id: channelId,
+      content_group_id: contentGroupId,
+    };
+
+    const { data: lessonData, error: lessonError } = await supabase
+      .from("lessons")
+      .insert([lessonRecord])
+      .select()
+      .single();
+
+    if (lessonError) {
+      if (
+        lessonError.code === "23505" ||
+        lessonError.message.includes("unique constraint")
+      ) {
+        throw new Error(
+          `Content for ${language} on ${today} already exists in channel ${channelId}. Skipping duplicate.`
+        );
+      }
+      throw new Error(`Failed to insert lesson: ${lessonError.message}`);
+    }
+
+    logger.info("Translation lesson record created", {
+      lessonId: lessonData.id,
+      title: content.title,
+      language,
+    });
+
+    // 2. Create sentence records pointing to English audio
+    const sentenceRecords: Omit<SentenceRecord, "id">[] = content.lines.map(
+      (line, i) => ({
+        lesson_id: lessonData.id,
+        order_index: i,
+        text: line, // Translation text
+        audio_url: sharedAudioData[i].audioUrl, // English audio URL
+        duration: sharedAudioData[i].duration ?? 0,
+        voice_used: sharedAudioData[i].voiceUsed,
+        start_time: undefined,
+        end_time: undefined,
+      })
+    );
+
+    const { error: sentencesError } = await supabase
+      .from("sentences")
+      .insert(sentenceRecords);
+
+    if (sentencesError) {
+      // Rollback lesson
+      logger.warn("Rolling back translation lesson due to sentence error", {
+        lessonId: lessonData.id,
+        error: sentencesError.message,
+      });
+      await supabase.from("lessons").delete().eq("id", lessonData.id);
+      throw new Error(`Failed to insert sentences: ${sentencesError.message}`);
+    }
+
+    logger.info("Translation lesson stored successfully with shared audio", {
+      lessonId: lessonData.id,
+      language,
+      sentenceCount: sentenceRecords.length,
+    });
+
+    return lessonData.id;
+  } catch (error) {
+    logger.error("Error storing translation lesson", error);
+    throw error;
+  }
+}
+
+/**
  * Database Schema SQL for reference (updated for multi-language support):
  *
  * CREATE TABLE channels (
