@@ -10,19 +10,18 @@ import SwiftData
 
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("learningLanguage") private var learningLanguage: String = "en"
     @State private var showSettings = false
     @State private var isLoading = false
     @State private var errorMessage: String?
 
     private let repository = LessonRepository()
-    private var settings: UserSettings { UserSettings.shared }
 
-    // Computed property to get filtered channels based on learning language
+    // Computed property to get English channels only
     private var channels: [Channel] {
+        let language = UserSettings.learningLanguage
         let descriptor = FetchDescriptor<Channel>(
             predicate: #Predicate { channel in
-                channel.language == learningLanguage
+                channel.language == language
             },
             sortBy: [SortDescriptor(\Channel.title)]
         )
@@ -45,7 +44,7 @@ struct ChannelListView: View {
                         ContentUnavailableView {
                             Label("No Channels", systemImage: "antenna.radiowaves.left.and.right.slash")
                         } description: {
-                            Text("No channels available for \(settings.language(for: learningLanguage)?.displayName ?? ""). Tap the refresh button to load channels from Supabase.")
+                            Text("No English channels available. Tap the refresh button to load channels from Supabase.")
                         }
                     } else {
                         List {
@@ -62,7 +61,7 @@ struct ChannelListView: View {
                     }
                 }
             }
-            .navigationTitle("Channels - \(settings.language(for: learningLanguage)?.nativeName ?? "")")
+            .navigationTitle("English Channels")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -91,12 +90,6 @@ struct ChannelListView: View {
                     }
                 }
             }
-            .onChange(of: learningLanguage) { oldValue, newValue in
-                // Automatically fetch channels when learning language changes
-                Task {
-                    await fetchChannelsFromSupabase()
-                }
-            }
             .alert("Error", isPresented: .constant(errorMessage != nil)) {
                 Button("OK") {
                     errorMessage = nil
@@ -117,13 +110,13 @@ struct ChannelListView: View {
         errorMessage = nil
 
         do {
-            // Fetch channels for the selected learning language from Supabase
-            let channelDTOs = try await repository.fetchChannels(for: learningLanguage)
+            // Fetch English channels from Supabase
+            let channelDTOs = try await repository.fetchChannels(for: UserSettings.learningLanguage)
 
             // Save to SwiftData
             try repository.saveChannelsToSwiftData(channelDTOs, modelContext: modelContext)
 
-            print("Successfully fetched and saved \(channelDTOs.count) channels for \(learningLanguage) from Supabase")
+            print("Successfully fetched and saved \(channelDTOs.count) English channels from Supabase")
         } catch {
             errorMessage = "Failed to fetch channels: \(error.localizedDescription)"
             print("Error fetching channels: \(error)")

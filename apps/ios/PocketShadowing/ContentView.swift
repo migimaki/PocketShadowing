@@ -12,12 +12,12 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Lesson.createdDate, order: .reverse) private var allLessons: [Lesson]
 
-    @State private var settings = UserSettings.shared
     @State private var showSettings = false
 
-    // Filter lessons by selected learning language
+    // Filter lessons for English only
     private var lessons: [Lesson] {
-        allLessons.filter { $0.language == settings.learningLanguage }
+        let language = UserSettings.learningLanguage
+        return allLessons.filter { $0.language == language }
     }
 
     var body: some View {
@@ -90,24 +90,11 @@ struct ContentView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             } else {
-                Text("No lessons available for \(settings.learningLanguageObject.displayName)")
+                Text("No English lessons available. Try checking the Channels tab to download content.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
-
-                Button {
-                    showSettings = true
-                } label: {
-                    Text("Change Learning Language")
-                        .font(.subheadline)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                }
-                .padding(.top, 10)
             }
         }
         .navigationTitle("Lessons")

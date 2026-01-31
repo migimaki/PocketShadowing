@@ -9,10 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("learningLanguage") private var learningLanguage: String = "en"
     @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
-
-    private var settings: UserSettings { UserSettings.shared }
 
     var body: some View {
         NavigationStack {
@@ -23,28 +20,9 @@ struct SettingsView: View {
                 // Content layer
                 Form {
                 Section {
-                    Text("Select your native language and the language you want to learn. The app will show lessons in your chosen learning language.")
+                    Text("This app helps you practice English through shadowing. Select your native language for future interface localization.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                }
-
-                Section("Learning Language") {
-                    Picker("I want to learn", selection: $learningLanguage) {
-                        ForEach(UserSettings.availableLanguages) { language in
-                            Text(language.displayName)
-                                .tag(language.code)
-                        }
-                    }
-
-                    if learningLanguage != "en" {
-                        Label {
-                            Text("Lessons will be in \(settings.language(for: learningLanguage)?.displayName ?? "")")
-                                .font(.caption)
-                        } icon: {
-                            Image(systemName: "info.circle.fill")
-                                .foregroundColor(.blue)
-                        }
-                    }
                 }
 
                 Section("Native Language (Future Feature)") {
@@ -66,8 +44,8 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
 
-                    LabeledContent("Supported Languages") {
-                        Text("\(UserSettings.availableLanguages.count)")
+                    LabeledContent("Learning Language") {
+                        Text("English")
                             .foregroundColor(.secondary)
                     }
                 }

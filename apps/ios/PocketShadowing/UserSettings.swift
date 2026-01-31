@@ -18,12 +18,12 @@ class UserSettings {
     @ObservationIgnored
     @AppStorage("nativeLanguage") var nativeLanguage: String = "en"
 
-    /// User's selected learning language
-    /// This determines which lessons are shown
-    @ObservationIgnored
-    @AppStorage("learningLanguage") var learningLanguage: String = "en"
+    /// Learning language is hard-coded to English
+    /// This constant ensures consistency across the app
+    static let learningLanguage: String = "en"
 
-    /// Available languages
+    /// Available languages for native language selection
+    /// Used for showing translations in lessons
     static let availableLanguages = [
         Language(code: "en", name: "English", nativeName: "English"),
         Language(code: "ja", name: "Japanese", nativeName: "日本語"),
@@ -38,11 +38,6 @@ class UserSettings {
     /// Get native language object
     var nativeLanguageObject: Language {
         language(for: nativeLanguage) ?? Self.availableLanguages[0]
-    }
-
-    /// Get learning language object
-    var learningLanguageObject: Language {
-        language(for: learningLanguage) ?? Self.availableLanguages[0]
     }
 
     private init() {}
