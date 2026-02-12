@@ -2,8 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { generateMultiLanguageContent } from '../src/services/gemini';
 import { generateAudioFiles } from '../src/services/gemini-tts';
-import { storeLessonData, storeLessonDataWithSharedAudio, getPublicAudioUrl, checkIfTodayContentExists, getDefaultSeriesId, getSeriesById, getOrCreateChannel, getAllActiveSeries, getSeriesByBatch, storeGenerationLog, type SharedAudioData } from '../src/services/supabase';
-import type { GenerationResult, LanguageCode, SeriesGenerationResult } from '../src/types/index';
+import { storeLessonData, storeTranslations, checkIfTodayContentExists, getSeriesById, getOrCreateChannel, getAllActiveSeries, getSeriesByBatch, storeGenerationLog } from '../src/services/supabase';
+import type { GenerationResult, SeriesGenerationResult } from '../src/types/index';
+import { TRANSLATION_LANGUAGES } from '../src/types/index';
 import { Logger } from '../src/utils/logger';
 import crypto from 'crypto';
 
@@ -11,7 +12,6 @@ const logger = new Logger('GenerateContent');
 
 /**
  * Request parameter validation schema
- * Ensures API inputs are safe and well-formed
  */
 const requestSchema = z.object({
   series_ids: z
@@ -25,25 +25,21 @@ const requestSchema = z.object({
     .max(100, 'Batch must be <= 100')
     .optional(),
 }).refine(
-  (data) => {
-    // At least one parameter should be provided, or neither (for default behavior)
-    return true;
-  },
+  () => true,
   { message: 'Invalid request parameters' }
 );
 
 /**
  * Main Vercel serverless function
- * Generates daily English learning content about special days using Gemini AI
+ * Generates daily English learning content using Gemini AI
  */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
   const startTime = Date.now();
-  const requestId = crypto.randomUUID(); // Unique ID for idempotency tracking
+  const requestId = crypto.randomUUID();
 
-  // Determine trigger type early (needed for logging in both success and error cases)
   const authHeader = req.headers.authorization;
   const isCronJob = authHeader === `Bearer ${process.env.CRON_SECRET}`;
   const triggerType: 'cron' | 'manual' | 'api' = isCronJob ? 'cron' : 'manual';
@@ -51,7 +47,6 @@ export default async function handler(
   try {
     logger.info('=== Starting content generation ===', { requestId, triggerType });
 
-    // Verify this is a POST request or cron trigger
     if (req.method !== 'POST' && req.method !== 'GET') {
       res.status(405).json({
         success: false,
@@ -61,19 +56,12 @@ export default async function handler(
       return;
     }
 
-    // Check authorization for non-cron requests
-    // Vercel cron jobs include a special header
-
     if (!isCronJob && req.method === 'POST') {
-      // Verify manual trigger authorization
       const providedSecret = req.headers['x-api-secret'] || req.query.secret;
       const apiSecret = process.env.API_SECRET;
 
       if (!apiSecret || providedSecret !== apiSecret) {
-        logger.warn('Unauthorized access attempt', {
-          apiSecretSet: !!apiSecret,
-          providedSecretSet: !!providedSecret,
-        });
+        logger.warn('Unauthorized access attempt');
         res.status(401).json({
           success: false,
           error: 'Unauthorized',
@@ -83,12 +71,11 @@ export default async function handler(
       }
     }
 
-    // Extract and validate series_ids or batch from request
+    // Extract and validate parameters
     const requestBody = req.body || {};
     const rawBatch = requestBody.batch || req.query.batch;
     const rawSeriesIds = requestBody.series_ids || req.query.series_ids;
 
-    // Validate input parameters
     const validationResult = requestSchema.safeParse({
       series_ids: rawSeriesIds ? (Array.isArray(rawSeriesIds) ? rawSeriesIds : [rawSeriesIds]) : undefined,
       batch: rawBatch ? parseInt(String(rawBatch), 10) : undefined,
@@ -110,11 +97,9 @@ export default async function handler(
 
     let seriesIds: string[];
     if (seriesIdsParam && seriesIdsParam.length > 0) {
-      // Explicit series_ids provided (manual trigger)
       seriesIds = seriesIdsParam;
       logger.info('Using provided series IDs', { seriesIds });
     } else if (batchParam !== undefined) {
-      // Batch number provided (cron trigger)
       logger.info('Fetching series for batch', { batch: batchParam });
       const allSeries = await getSeriesByBatch(batchParam);
       seriesIds = allSeries.map(s => s.id);
@@ -123,7 +108,6 @@ export default async function handler(
         seriesNames: allSeries.map(s => s.name)
       });
     } else {
-      // No batch or series_ids: fetch ALL active series (backward compatible)
       logger.info('No batch or series_ids provided, fetching all active series');
       const allSeries = await getAllActiveSeries();
       seriesIds = allSeries.map(s => s.id);
@@ -135,15 +119,13 @@ export default async function handler(
 
     logger.info('Processing series', { count: seriesIds.length, seriesIds });
 
-    const languages: LanguageCode[] = ['en', 'ja', 'fr'];
     const results: SeriesGenerationResult['results'] = [];
     const errors: string[] = [];
-    const generationStartTime = Date.now(); // Track execution time for timeout monitoring
-    const VERCEL_TIMEOUT_MS = 600000; // 10 minutes
-    const TIMEOUT_BUFFER_MS = 60000; // 1 minute buffer for cleanup
+    const generationStartTime = Date.now();
+    const VERCEL_TIMEOUT_MS = 600000;
+    const TIMEOUT_BUFFER_MS = 60000;
 
-    // Process each series COMPLETELY INDEPENDENTLY
-    // Each series will have its own isolated AI generation context
+    // Process each series
     for (let i = 0; i < seriesIds.length; i++) {
       const seriesId = seriesIds[i];
 
@@ -152,7 +134,6 @@ export default async function handler(
         logger.info(`Processing Series ${i + 1}/${seriesIds.length}: ${seriesId}`);
         logger.info(`${'='.repeat(80)}\n`);
 
-        // Fetch series data
         const series = await getSeriesById(seriesId);
         if (!series) {
           const errorMsg = `Series not found: ${seriesId}`;
@@ -167,243 +148,96 @@ export default async function handler(
           difficulty: series.difficulty_level,
         });
 
-        // Get or create channels for each language in this series
-        logger.info(`Getting/creating channels for series: ${series.name}`);
-        const seriesChannels: Record<LanguageCode, string> = {} as Record<LanguageCode, string>;
+        // Get or create ONE channel per series (no language variants)
+        const channelId = await getOrCreateChannel(seriesId);
+        logger.debug(`Channel ready: ${channelId}`);
 
-        for (const language of languages) {
-          const channelId = await getOrCreateChannel(language, seriesId);
-          seriesChannels[language] = channelId;
-          logger.debug(`Channel ready for ${language}: ${channelId}`);
-        }
-
-        // IDEMPOTENCY CHECK: Verify which languages need content for this series
-        // This prevents duplicate generation if the function is triggered multiple times
-        const existingLanguages: LanguageCode[] = [];
-        for (const language of languages) {
-          const channelId = seriesChannels[language];
-          const contentExists = await checkIfTodayContentExists(language, channelId);
-          if (contentExists) {
-            existingLanguages.push(language);
-            logger.info(`Idempotency: Content already exists for ${language}`, {
-              requestId,
-              seriesId,
-              channelId,
-              date: new Date().toISOString().split('T')[0],
-            });
-          }
-        }
-
-        const languagesToGenerate = languages.filter(lang => !existingLanguages.includes(lang));
-
-        if (languagesToGenerate.length === 0) {
-          logger.info(`Idempotency: All content exists for series ${series.name}, skipping`, {
+        // Idempotency check
+        const contentExists = await checkIfTodayContentExists(channelId);
+        if (contentExists) {
+          logger.info(`Idempotency: Content already exists for series ${series.name}, skipping`, {
             requestId,
             seriesId,
-            existingLanguages,
+            channelId,
+            date: new Date().toISOString().split('T')[0],
           });
           continue;
         }
 
-        logger.info(`Generating content for ${series.name}`, {
-          languagesToGenerate,
-          existingLanguages
-        });
-
-        // Calculate estimated time for this series
-        // TTS is only generated for English - translations share English audio
+        // Time estimate
         const sentenceCount = series.line_count || 10;
-        const needsEnglishAudio = languagesToGenerate.includes('en');
-        const totalTTSCalls = needsEnglishAudio ? sentenceCount : 0;
-        const estimatedTTSTimeSeconds = totalTTSCalls * 7; // 7 seconds per TTS call (6s min + 1s buffer)
-        const estimatedTotalTimeMinutes = Math.ceil((estimatedTTSTimeSeconds + 60) / 60); // Add 1 min for content generation
+        const estimatedTTSTimeSeconds = sentenceCount * 7;
+        const estimatedTotalTimeMinutes = Math.ceil((estimatedTTSTimeSeconds + 60) / 60);
 
-        logger.info(`Series generation time estimate`, {
+        logger.info(`Generation time estimate`, {
           sentences: sentenceCount,
-          needsEnglishAudio,
-          totalTTSCalls,
-          translationLanguages: languagesToGenerate.filter(l => l !== 'en').length,
           estimatedTimeMinutes: estimatedTotalTimeMinutes,
+          translationLanguages: [...TRANSLATION_LANGUAGES],
         });
 
-        // Timeout protection: check if we have enough time remaining
+        // Timeout protection
         const elapsedTime = Date.now() - generationStartTime;
         const remainingTime = VERCEL_TIMEOUT_MS - elapsedTime;
-        const estimatedTimeNeeded = estimatedTTSTimeSeconds * 1000; // Convert to ms
+        const estimatedTimeNeeded = estimatedTTSTimeSeconds * 1000;
 
         if (estimatedTimeNeeded > remainingTime - TIMEOUT_BUFFER_MS) {
-          const warningMsg = `⚠️ WARNING: Insufficient time remaining for series ${series.name}. Estimated: ${estimatedTotalTimeMinutes}min, Remaining: ${Math.floor(remainingTime / 60000)}min`;
+          const warningMsg = `WARNING: Insufficient time remaining for series ${series.name}. Estimated: ${estimatedTotalTimeMinutes}min, Remaining: ${Math.floor(remainingTime / 60000)}min`;
           logger.warn(warningMsg);
           errors.push(warningMsg);
-          continue; // Skip this series to avoid timeout
+          continue;
         }
 
-        // Generate content group ID for this series (links all language versions)
-        const contentGroupId = crypto.randomUUID();
-
-        // Step 1: Generate multi-language content using Gemini AI
-        logger.info(`Generating multi-language content for ${series.name}...`);
+        // Step 1: Generate English content + translations
+        logger.info(`Generating content for ${series.name}...`);
         const multiLangContent = await generateMultiLanguageContent(new Date(), series);
-        logger.info('Multi-language content generated successfully', {
+        logger.info('Content generated successfully', {
           seriesName: series.name,
           englishTitle: multiLangContent.en.title,
-          japaneseTitle: multiLangContent.ja.title,
-          frenchTitle: multiLangContent.fr.title,
+          translationLanguages: Object.keys(multiLangContent.translations),
         });
 
         const sourceUrl = `AI Generated - ${series.name} (${new Date().toLocaleDateString('en-US')})`;
-        const seriesLessons: Record<string, { lessonId: string; sentenceCount: number }> = {};
 
-        // Shared audio data from English lesson (used by JA/FR translations)
-        let sharedAudioData: SharedAudioData[] = [];
+        // Step 2: Generate English audio
+        logger.info(`Generating ${multiLangContent.en.lines.length} audio files for ${series.name}...`);
+        const audioFiles = await generateAudioFiles(multiLangContent.en.lines, series);
 
-        // Step 2: Generate audio ONLY for English (the target learning language)
-        if (languagesToGenerate.includes('en')) {
-          try {
-            const englishContent = multiLangContent.en;
-            const englishChannelId = seriesChannels.en;
+        logger.info(`English audio files generated`, {
+          fileCount: audioFiles.length,
+          voicesUsed: [...new Set(audioFiles.map(f => f.voiceUsed || 'unknown'))]
+        });
 
-            const ttsCalls = englishContent.lines.length;
-            const estimatedTimeMin = Math.ceil((ttsCalls * 7) / 60);
+        // Step 3: Store English lesson
+        logger.info(`Storing English lesson in Supabase...`);
+        const { lessonId, sentenceIds } = await storeLessonData(
+          multiLangContent.en,
+          audioFiles,
+          sourceUrl,
+          channelId
+        );
 
-            logger.info(`Generating ${ttsCalls} audio files for ${series.name} - ENGLISH (target language)`, {
-              sentenceCount: englishContent.lines.length,
-              estimatedTimeMinutes: estimatedTimeMin,
-            });
+        logger.info(`English lesson stored`, { lessonId });
 
-            // Generate audio files using Gemini-TTS (sentence-by-sentence with rate limiting)
-            const audioFiles = await generateAudioFiles(englishContent.lines, 'en', series);
-
-            logger.info(`English audio files generated`, {
-              fileCount: audioFiles.length,
-              voicesUsed: [...new Set(audioFiles.map(f => f.voiceUsed || 'unknown'))]
-            });
-
-            logger.info(`Storing ENGLISH data in Supabase...`);
-            const englishLessonId = await storeLessonData(
-              englishContent,
-              audioFiles,
-              sourceUrl,
-              'en',
-              englishChannelId,
-              contentGroupId
-            );
-
-            seriesLessons.en = {
-              lessonId: englishLessonId,
-              sentenceCount: englishContent.lines.length
-            };
-
-            logger.info(`ENGLISH data stored successfully`, { lessonId: englishLessonId });
-
-            // Build shared audio data for translation lessons
-            sharedAudioData = audioFiles.map((f, i) => ({
-              lineIndex: i,
-              audioUrl: getPublicAudioUrl(englishChannelId, englishLessonId, i),
-              duration: f.duration,
-              voiceUsed: f.voiceUsed,
-            }));
-
-            logger.info(`Prepared shared audio data for translations`, {
-              sentenceCount: sharedAudioData.length,
-            });
-
-          } catch (enError) {
-            const errorMsg = `Failed to generate ENGLISH for series ${series.name}: ${enError instanceof Error ? enError.message : 'Unknown error'}`;
-
-            if (enError instanceof Error && enError.message.includes('already exists')) {
-              logger.warn(`Idempotency: Duplicate content detected for English`, {
-                requestId,
-                seriesId,
-                message: enError.message,
-              });
-            } else {
-              logger.error(errorMsg, { requestId, seriesId });
-            }
-
-            errors.push(errorMsg);
-            // If English fails, we can't generate translations (no audio to share)
-            // Skip to next series
-            continue;
-          }
+        // Step 4: Store translations
+        if (Object.keys(multiLangContent.translations).length > 0) {
+          logger.info(`Storing translations...`);
+          await storeTranslations(lessonId, sentenceIds, multiLangContent.translations);
+          logger.info(`Translations stored successfully`);
         }
 
-        // Step 3: Store translation lessons (JA/FR) with shared English audio
-        // No TTS generation needed - translations reference English audio URLs
-        const translationLanguages: LanguageCode[] = ['ja', 'fr'];
-
-        for (const language of translationLanguages) {
-          if (!languagesToGenerate.includes(language)) {
-            continue;
-          }
-
-          // If we don't have shared audio data (English wasn't generated), skip translations
-          if (sharedAudioData.length === 0) {
-            logger.warn(`Skipping ${language.toUpperCase()} - no English audio available to share`, {
-              seriesId,
-              seriesName: series.name,
-            });
-            continue;
-          }
-
-          try {
-            const content = multiLangContent[language];
-            const channelId = seriesChannels[language];
-
-            logger.info(`Storing ${language.toUpperCase()} translation with shared English audio...`, {
-              sentenceCount: content.lines.length,
-            });
-
-            const lessonId = await storeLessonDataWithSharedAudio(
-              content,
-              sharedAudioData,
-              sourceUrl,
-              language,
-              channelId,
-              contentGroupId
-            );
-
-            seriesLessons[language] = {
-              lessonId,
-              sentenceCount: content.lines.length
-            };
-
-            logger.info(`${language.toUpperCase()} translation stored successfully`, { lessonId });
-
-          } catch (langError) {
-            const errorMsg = `Failed to store ${language.toUpperCase()} translation for series ${series.name}: ${langError instanceof Error ? langError.message : 'Unknown error'}`;
-
-            if (langError instanceof Error && langError.message.includes('already exists')) {
-              logger.warn(`Idempotency: Duplicate content detected for ${language}`, {
-                requestId,
-                seriesId,
-                language,
-                message: langError.message,
-              });
-            } else {
-              logger.error(errorMsg, { requestId, seriesId, language });
-            }
-
-            errors.push(errorMsg);
-            // Continue with next language instead of failing entire series
-            continue;
-          }
-        }
-
-        // Only add to results if at least one language succeeded
-        if (Object.keys(seriesLessons).length > 0) {
-          results.push({
-            seriesId,
-            seriesName: series.name,
-            lessons: seriesLessons
-          });
-        }
+        results.push({
+          seriesId,
+          seriesName: series.name,
+          lessonId,
+          sentenceCount: multiLangContent.en.lines.length,
+          translationLanguages: Object.keys(multiLangContent.translations),
+        });
 
         logger.info(`${'='.repeat(80)}`);
         logger.info(`✓ Completed series ${i + 1}/${seriesIds.length}: ${series.name}`);
         logger.info(`${'='.repeat(80)}\n`);
 
-        // Add a delay between series to reduce API pressure and ensure stability
+        // Delay between series
         if (i < seriesIds.length - 1) {
           logger.info('Waiting 5 seconds before processing next series...\n');
           await new Promise(resolve => setTimeout(resolve, 5000));
@@ -417,16 +251,14 @@ export default async function handler(
     }
 
     const duration = Date.now() - startTime;
-    logger.info('=== Multi-series content generation completed ===', {
+    logger.info('=== Content generation completed ===', {
       duration: `${duration}ms`,
       seriesCount: results.length,
       errors: errors.length,
     });
 
-    // Store generation log in Supabase
     await storeGenerationLog(triggerType, seriesIds, results, errors, duration);
 
-    // Return results
     res.status(200).json({
       success: results.length > 0,
       results,
@@ -437,20 +269,11 @@ export default async function handler(
   } catch (error) {
     const duration = Date.now() - startTime;
     logger.error('=== Content generation failed ===', error);
-    logger.info('Duration before failure', { duration: `${duration}ms` });
 
-    // Store generation log for failed run
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    // Try to store log (don't throw if this fails)
     try {
-      await storeGenerationLog(
-        triggerType,
-        [], // seriesIds might not be available if error occurred early
-        [], // no results on failure
-        [errorMessage],
-        duration
-      );
+      await storeGenerationLog(triggerType, [], [], [errorMessage], duration);
     } catch (logError) {
       logger.error('Failed to store error log', logError);
     }

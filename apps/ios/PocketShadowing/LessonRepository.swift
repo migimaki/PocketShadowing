@@ -1,6 +1,6 @@
 //
 //  LessonRepository.swift
-//  WalkingTalking
+//  PocketShadowing
 //
 //  Created by Claude Code on 2025/11/01.
 //
@@ -31,23 +31,9 @@ class LessonRepository {
         return response
     }
 
-    /// Fetch channels for a specific language
-    func fetchChannels(for language: String) async throws -> [ChannelDTO] {
-        let response: [ChannelDTO] = try await client.database
-            .from("channels")
-            .select()
-            .eq("language", value: language)
-            .order("title", ascending: true)
-            .execute()
-            .value
-
-        return response
-    }
-
     /// Save channels to SwiftData
     func saveChannelsToSwiftData(_ channelDTOs: [ChannelDTO], modelContext: ModelContext) throws {
         for channelDTO in channelDTOs {
-            // Check if channel already exists
             let descriptor = FetchDescriptor<Channel>(
                 predicate: #Predicate { $0.id == channelDTO.id }
             )
@@ -55,20 +41,17 @@ class LessonRepository {
             let existingChannels = try modelContext.fetch(descriptor)
 
             if existingChannels.isEmpty {
-                // Create new channel
                 let channel = Channel(
                     id: channelDTO.id,
                     title: channelDTO.title,
                     subtitle: channelDTO.subtitle ?? "",
                     description: channelDTO.description,
                     coverImageURL: channelDTO.cover_image_url,
-                    iconName: channelDTO.icon_name,
-                    language: channelDTO.language
+                    iconName: channelDTO.icon_name
                 )
 
                 modelContext.insert(channel)
             } else if let existingChannel = existingChannels.first {
-                // Update existing channel with new fields
                 existingChannel.title = channelDTO.title
                 existingChannel.subtitle = channelDTO.subtitle ?? existingChannel.subtitle
                 existingChannel.coverImageURL = channelDTO.cover_image_url
@@ -85,19 +68,6 @@ class LessonRepository {
         let response: [LessonDTO] = try await client.database
             .from("lessons")
             .select()
-            .order("date", ascending: false)
-            .execute()
-            .value
-
-        return response
-    }
-
-    /// Fetch lessons for a specific language
-    func fetchLessons(for language: String) async throws -> [LessonDTO] {
-        let response: [LessonDTO] = try await client.database
-            .from("lessons")
-            .select()
-            .eq("language", value: language)
             .order("date", ascending: false)
             .execute()
             .value
@@ -175,50 +145,36 @@ class LessonRepository {
         return (lesson, sentences)
     }
 
-    /// Fetch related lessons (same content, different languages) by content_group_id
-    func fetchRelatedLessons(for contentGroupId: UUID) async throws -> [LessonDTO] {
-        let response: [LessonDTO] = try await client.database
-            .from("lessons")
-            .select()
-            .eq("content_group_id", value: contentGroupId.uuidString)
-            .order("language", ascending: true)
-            .execute()
-            .value
-
-        return response
-    }
-
     /// Fetch translation sentences for a lesson in a target language
-    /// - Parameters:
-    ///   - contentGroupId: The content group ID linking related lessons
-    ///   - targetLanguage: The language code for the translation (e.g., "ja", "en", "fr")
-    /// - Returns: Array of sentence texts in the target language, ordered by sentence index
-    func fetchTranslationSentences(contentGroupId: UUID, targetLanguage: String) async throws -> [String] {
-        // First, find the lesson in the target language
-        let lessons: [LessonDTO] = try await client.database
-            .from("lessons")
-            .select()
-            .eq("content_group_id", value: contentGroupId.uuidString)
-            .eq("language", value: targetLanguage)
-            .limit(1)
-            .execute()
-            .value
+    /// Queries the sentence_translations table directly
+    func fetchTranslationSentences(lessonId: UUID, targetLanguage: String) async throws -> [String] {
+        // Get sentences for this lesson (to know the order)
+        let sentences = try await fetchSentences(for: lessonId)
+        let sentenceIds = sentences.map { $0.id.uuidString }
 
-        guard let targetLesson = lessons.first else {
-            throw RepositoryError.lessonNotFound
+        guard !sentenceIds.isEmpty else {
+            return []
         }
 
-        // Fetch sentences for that lesson
-        let sentences = try await fetchSentences(for: targetLesson.id)
+        // Query sentence_translations for these sentences in the target language
+        let translations: [SentenceTranslationDTO] = try await client.database
+            .from("sentence_translations")
+            .select()
+            .in("sentence_id", values: sentenceIds)
+            .eq("language", value: targetLanguage)
+            .execute()
+            .value
 
-        // Return just the text, ordered by index
-        return sentences.map { $0.text }
+        // Build a map of sentence_id -> translated text
+        let translationMap = Dictionary(uniqueKeysWithValues: translations.map { ($0.sentence_id, $0.text) })
+
+        // Return translations in sentence order
+        return sentences.compactMap { translationMap[$0.id] }
     }
 
     /// Save lessons and sentences to SwiftData
     func saveLessonsToSwiftData(_ lessonDTOs: [LessonDTO], sentences: [UUID: [SentenceDTO]], modelContext: ModelContext, channel: Channel) throws {
         for lessonDTO in lessonDTOs {
-            // Check if lesson already exists
             let descriptor = FetchDescriptor<Lesson>(
                 predicate: #Predicate { $0.id == lessonDTO.id }
             )
@@ -226,20 +182,16 @@ class LessonRepository {
             let existingLessons = try modelContext.fetch(descriptor)
 
             if existingLessons.isEmpty {
-                // Create new lesson
                 let lesson = Lesson(
                     id: lessonDTO.id,
                     title: lessonDTO.title,
-                    description: "", // No description in Supabase yet
+                    description: "",
                     date: lessonDTO.parsedDate,
                     sourceURL: lessonDTO.source_url,
-                    language: lessonDTO.language,
-                    contentGroupId: lessonDTO.content_group_id,
-                    audioURL: lessonDTO.audio_url // NEW: Lesson-level audio URL
+                    audioURL: lessonDTO.audio_url
                 )
                 lesson.channel = channel
 
-                // Add sentences with timestamps
                 if let sentenceDTOs = sentences[lessonDTO.id] {
                     for sentenceDTO in sentenceDTOs {
                         let sentence = Sentence(
@@ -247,9 +199,9 @@ class LessonRepository {
                             text: sentenceDTO.text,
                             order: sentenceDTO.order_index,
                             estimatedDuration: sentenceDTO.durationInSeconds,
-                            audioURL: sentenceDTO.audio_url, // Deprecated - kept for backward compatibility
-                            startTime: sentenceDTO.startTimeInSeconds, // NEW
-                            endTime: sentenceDTO.endTimeInSeconds // NEW
+                            audioURL: sentenceDTO.audio_url,
+                            startTime: sentenceDTO.startTimeInSeconds,
+                            endTime: sentenceDTO.endTimeInSeconds
                         )
                         lesson.sentences.append(sentence)
                     }

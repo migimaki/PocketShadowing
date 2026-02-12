@@ -1,14 +1,13 @@
 /**
- * Type definitions for WalkingTalking Content Generator
+ * Type definitions for PocketShadowing Content Generator
  */
 
-// News Article from web scraping
-export interface NewsArticle {
-  title: string;
-  content: string;
-  url: string;
-  publishedDate: Date;
-}
+// Translation languages supported (add new languages here)
+export const TRANSLATION_LANGUAGES = ['ja', 'fr'] as const;
+export type TranslationLanguage = (typeof TRANSLATION_LANGUAGES)[number];
+
+// Difficulty levels
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 
 // Summarized content with line-by-line breakdown
 export interface SummarizedContent {
@@ -25,16 +24,13 @@ export interface AudioFile {
   fileName: string;      // e.g., "sentence_0.mp3" for individual files
   voiceUsed?: string;    // Track which voice was used for TTS generation
   duration?: number;     // Actual audio duration in seconds (estimated for now)
-  // Deprecated: timestamps not needed for individual sentence files
-  startTime?: number;    // Optional: only used for legacy bulk audio model
-  endTime?: number;      // Optional: only used for legacy bulk audio model
 }
 
-// Language codes
-export type LanguageCode = 'en' | 'ja' | 'fr';
-
-// Difficulty levels
-export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+// Multi-language content (English + translations)
+export interface MultiLanguageContent {
+  en: SummarizedContent;
+  translations: Record<string, SummarizedContent>;
+}
 
 // Voice information
 export interface VoiceInfo {
@@ -49,51 +45,36 @@ export interface VoiceAlternationConfig {
   pattern: 'odd_even' | 'none';
 }
 
-// Multi-language content
-export interface MultiLanguageContent {
-  en: SummarizedContent;
-  ja: SummarizedContent;
-  fr: SummarizedContent;
-}
-
 // Series for content organization
 export interface Series {
   id: string;
   name: string;
   concept: string;
   cover_image_url?: string;
-  line_count: number;  // Target number of sentences/lines (each line = 1 audio file)
+  line_count: number;
   difficulty_level: DifficultyLevel;
-  supported_languages: LanguageCode[];
   ai_generation_prompt?: string;
   // Voice configuration
   enable_voice_alternation?: boolean;
-  // Gemini-TTS voice names (language-agnostic, applies to all languages)
-  default_voice_name?: string;      // Defaults to 'Charon' if null
-  alternate_voice_name?: string;    // Used when enable_voice_alternation is true
-  // Gemini-TTS prompts (language-specific for en/ja/fr)
-  gemini_tts_prompt_en?: string;      // English default voice prompt
-  gemini_tts_prompt_ja?: string;      // Japanese default voice prompt
-  gemini_tts_prompt_fr?: string;      // French default voice prompt
-  gemini_tts_alt_prompt_en?: string;  // English alternate voice prompt
-  gemini_tts_alt_prompt_ja?: string;  // Japanese alternate voice prompt
-  gemini_tts_alt_prompt_fr?: string;  // French alternate voice prompt
+  default_voice_name?: string;
+  alternate_voice_name?: string;
+  // Gemini-TTS prompts (English only)
+  gemini_tts_prompt?: string;
+  gemini_tts_alt_prompt?: string;
   // Batch assignment for multi-cron scheduling
   batch_number?: number;
   created_at?: string;
   updated_at?: string;
 }
 
-// Supabase lesson record
+// Supabase lesson record (English only)
 export interface LessonRecord {
   id?: string;
   title: string;
   source_url: string;
   date: string;
-  language: LanguageCode;
   channel_id: string;
-  content_group_id?: string;
-  audio_url?: string;   // Deprecated: not used in sentence-level audio model (use sentence.audio_url instead)
+  audio_url?: string;
   created_at?: string;
 }
 
@@ -103,12 +84,28 @@ export interface SentenceRecord {
   lesson_id: string;
   order_index: number;
   text: string;
-  audio_url: string;    // Individual sentence audio URL (required for sentence-level model)
-  duration: number;     // Audio duration in seconds
-  voice_used?: string;  // Track which voice generated the audio
-  // Deprecated: timestamps not needed for individual sentence audio files
-  start_time?: number | null;  // Optional: only for legacy bulk audio model (set to null)
-  end_time?: number | null;    // Optional: only for legacy bulk audio model (set to null)
+  audio_url: string;
+  duration: number;
+  voice_used?: string;
+  start_time?: number | null;
+  end_time?: number | null;
+}
+
+// Translation records for the new translation tables
+export interface LessonTranslationRecord {
+  id?: string;
+  lesson_id: string;
+  language: string;
+  title: string;
+  created_at?: string;
+}
+
+export interface SentenceTranslationRecord {
+  id?: string;
+  sentence_id: string;
+  language: string;
+  text: string;
+  created_at?: string;
 }
 
 // Content generation result
@@ -126,12 +123,9 @@ export interface SeriesGenerationResult {
   results: {
     seriesId: string;
     seriesName: string;
-    lessons: {
-      [language: string]: {
-        lessonId: string;
-        sentenceCount: number;
-      };
-    };
+    lessonId: string;
+    sentenceCount: number;
+    translationLanguages: string[];
   }[];
   errors?: string[];
   message: string;
@@ -148,12 +142,12 @@ export interface GenerationLogRecord {
   series_ids: string[];
   status: 'success' | 'partial' | 'failed';
   duration_ms: number;
-  results?: any; // JSONB - SeriesGenerationResult['results']
+  results?: any;
   errors?: string[];
   series_count: number;
   lessons_created: number;
   audio_files_generated: number;
-  metadata?: any; // JSONB - additional metadata
+  metadata?: any;
 }
 
 // Environment variables

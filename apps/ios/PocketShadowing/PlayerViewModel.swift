@@ -147,8 +147,8 @@ class PlayerViewModel {
         self.audioPlayerService = audioPlayerService
         self.audioCacheService = audioCacheService
         self.recordingService = recordingService
-        // Initialize speech recognition with the lesson's language
-        self.speechRecognitionService = speechRecognitionService ?? SpeechRecognitionService(languageCode: lesson.language)
+        // Initialize speech recognition for English
+        self.speechRecognitionService = speechRecognitionService ?? SpeechRecognitionService(languageCode: "en")
         self.audioSessionManager = audioSessionManager
 
         setupDelegates()
@@ -221,18 +221,11 @@ class PlayerViewModel {
 
     /// Load translation sentences in the user's native language
     private func loadTranslationSentences() {
-        // Only load if lesson has a content_group_id
-        guard let contentGroupId = lesson.contentGroupId else {
-            print("[PlayerViewModel] No content_group_id, translations not available")
-            return
-        }
-
-        // Get user's native language
         let nativeLanguage = UserSettings.shared.nativeLanguage
 
-        // Don't load translation if native language is same as learning language
-        if nativeLanguage == lesson.language {
-            print("[PlayerViewModel] Native language same as lesson language, no translation needed")
+        // Don't load translation if native language is English (same as lesson language)
+        if nativeLanguage == "en" {
+            print("[PlayerViewModel] Native language is English, no translation needed")
             return
         }
 
@@ -242,14 +235,13 @@ class PlayerViewModel {
             do {
                 let repository = LessonRepository()
                 let sentences = try await repository.fetchTranslationSentences(
-                    contentGroupId: contentGroupId,
+                    lessonId: lesson.id,
                     targetLanguage: nativeLanguage
                 )
                 self.translationSentences = sentences
                 print("[PlayerViewModel] Loaded \(sentences.count) translation sentences in \(nativeLanguage)")
             } catch {
                 print("[PlayerViewModel] Failed to load translations: \(error)")
-                // Translation not critical, don't show error to user
             }
             self.isLoadingTranslation = false
         }

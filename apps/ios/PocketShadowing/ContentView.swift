@@ -14,10 +14,9 @@ struct ContentView: View {
 
     @State private var showSettings = false
 
-    // Filter lessons for English only
+    // All lessons are English
     private var lessons: [Lesson] {
-        let language = UserSettings.learningLanguage
-        return allLessons.filter { $0.language == language }
+        allLessons
     }
 
     var body: some View {

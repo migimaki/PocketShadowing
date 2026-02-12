@@ -16,13 +16,9 @@ struct ChannelListView: View {
 
     private let repository = LessonRepository()
 
-    // Computed property to get English channels only
+    // Computed property to get all channels (all English)
     private var channels: [Channel] {
-        let language = UserSettings.learningLanguage
         let descriptor = FetchDescriptor<Channel>(
-            predicate: #Predicate { channel in
-                channel.language == language
-            },
             sortBy: [SortDescriptor(\Channel.title)]
         )
 
@@ -110,8 +106,8 @@ struct ChannelListView: View {
         errorMessage = nil
 
         do {
-            // Fetch English channels from Supabase
-            let channelDTOs = try await repository.fetchChannels(for: UserSettings.learningLanguage)
+            // Fetch all channels from Supabase
+            let channelDTOs = try await repository.fetchAllChannels()
 
             // Save to SwiftData
             try repository.saveChannelsToSwiftData(channelDTOs, modelContext: modelContext)

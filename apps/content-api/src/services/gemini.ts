@@ -1,13 +1,31 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { NewsArticle, SummarizedContent, MultiLanguageContent, LanguageCode, Series } from '../types/index';
+import type { SummarizedContent, MultiLanguageContent, Series } from '../types/index';
+import { TRANSLATION_LANGUAGES } from '../types/index';
 import { Logger } from '../utils/logger';
 import { retryWithBackoff } from '../utils/retry';
 
 const logger = new Logger('Gemini');
 
 /**
+ * Language name mapping for translation prompts
+ * Add new languages here as needed
+ */
+const LANGUAGE_NAMES: Record<string, string> = {
+  ja: 'Japanese',
+  fr: 'French',
+  ko: 'Korean',
+  zh: 'Chinese (Simplified)',
+  es: 'Spanish',
+  de: 'German',
+  pt: 'Portuguese',
+  it: 'Italian',
+  ar: 'Arabic',
+  hi: 'Hindi',
+};
+
+/**
  * Generates educational content about special days/events using Gemini AI
- * Creates a lesson formatted line-by-line for language learning based on series configuration
+ * Creates a lesson formatted line-by-line for English language learning
  */
 export async function generateSpecialDayContent(date: Date = new Date(), series?: Series): Promise<SummarizedContent> {
   try {
@@ -22,14 +40,11 @@ export async function generateSpecialDayContent(date: Date = new Date(), series?
       seriesConcept: series?.concept ? series.concept.substring(0, 50) + '...' : 'N/A'
     });
 
-    // Create a completely fresh Gemini AI instance for this series
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      // Each request is completely isolated
     });
 
-    // Format the date for the prompt
     const dateStr = date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -37,7 +52,6 @@ export async function generateSpecialDayContent(date: Date = new Date(), series?
       day: 'numeric'
     });
 
-    // Use series configuration or defaults
     const lineCount = series?.line_count || 10;
     const difficulty = series?.difficulty_level || 'intermediate';
     const seriesConcept = series?.concept || 'Daily news content about special days and current events';
@@ -78,8 +92,8 @@ Please provide the content now, starting with a title on the first line, followe
     const result = await retryWithBackoff(
       () => model.generateContent(prompt),
       `Gemini content generation for ${seriesName}`,
-      2,    // maxRetries
-      5000  // baseDelay (5 seconds)
+      2,
+      5000
     );
     const response = result.response;
     const text = response.text();
@@ -92,25 +106,21 @@ Please provide the content now, starting with a title on the first line, followe
       responseLength: text.length,
     });
 
-    // Parse the response into lines
     const allLines = text
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0)
       .map(line => {
-        // Remove numbering from the start of lines (e.g., "1. ", "2. ", etc.)
-        // but keep the actual content
         return line.replace(/^[\d]+[\.\)]\s*/, '');
       })
-      .filter(line => line.length > 0); // Filter again after removing numbering
+      .filter(line => line.length > 0);
 
     if (allLines.length === 0) {
       throw new Error('Failed to parse Gemini response into lines');
     }
 
-    // Extract title (first line) and content lines
     const title = allLines[0];
-    const lines = allLines.slice(1); // Rest are content lines
+    const lines = allLines.slice(1);
 
     logger.info('Successfully parsed special day content', {
       title,
@@ -131,93 +141,15 @@ Please provide the content now, starting with a title on the first line, followe
 }
 
 /**
- * Summarizes news article using Gemini AI
- * Creates a 100-150 word summary formatted line-by-line for English learning
- */
-export async function summarizeArticle(article: NewsArticle): Promise<SummarizedContent> {
-  try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY environment variable is not set');
-    }
-
-    logger.info('Initializing Gemini AI for summarization...');
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const prompt = `You are an English learning content creator. Your task is to summarize the following news article into 100-150 words for English learners.
-
-IMPORTANT FORMATTING REQUIREMENTS:
-1. Create a summary that is exactly 100-150 words
-2. Break the summary into SHORT sentences or phrases (10-20 words each)
-3. Put each sentence/phrase on a NEW LINE
-4. Use simple, clear English suitable for intermediate learners
-5. Each line should be a complete thought that can stand alone
-6. Do NOT use bullet points or numbering
-7. Just put one sentence per line
-
-Article Title: ${article.title}
-
-Article Content:
-${article.content}
-
-Please provide the summary now, with each sentence on a new line:`;
-
-    logger.info('Sending request to Gemini AI...');
-
-    const result = await retryWithBackoff(
-      () => model.generateContent(prompt),
-      `Gemini article summarization for "${article.title}"`,
-      2,    // maxRetries
-      5000  // baseDelay (5 seconds)
-    );
-    const response = result.response;
-    const text = response.text();
-
-    if (!text) {
-      throw new Error('Gemini returned empty response');
-    }
-
-    logger.info('Received response from Gemini', {
-      responseLength: text.length,
-    });
-
-    // Parse the response into lines
-    const lines = text
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .filter(line => !line.match(/^[\*\-\d]+[\.\)]/)); // Remove bullet points/numbering if any
-
-    if (lines.length === 0) {
-      throw new Error('Failed to parse Gemini response into lines');
-    }
-
-    logger.info('Successfully parsed summary', {
-      lineCount: lines.length,
-      wordCount: text.split(/\s+/).length,
-    });
-
-    return {
-      title: article.title,
-      summary: text,
-      lines,
-    };
-
-  } catch (error) {
-    logger.error('Error in Gemini summarization', error);
-    throw new Error(`Failed to summarize article: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
  * Translates English content to a target language
  * Maintains the line-by-line structure for language learning
+ *
+ * @param content - English content to translate
+ * @param targetLanguage - Language code (e.g., 'ja', 'fr', 'ko')
  */
 export async function translateContent(
   content: SummarizedContent,
-  targetLanguage: 'ja' | 'fr'
+  targetLanguage: string
 ): Promise<SummarizedContent> {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -225,12 +157,7 @@ export async function translateContent(
       throw new Error('GEMINI_API_KEY environment variable is not set');
     }
 
-    const languageNames = {
-      ja: 'Japanese',
-      fr: 'French'
-    };
-
-    const languageName = languageNames[targetLanguage];
+    const languageName = LANGUAGE_NAMES[targetLanguage] || targetLanguage;
 
     logger.info(`Translating content to ${languageName}...`, {
       originalTitle: content.title,
@@ -264,8 +191,8 @@ Please provide the ${languageName} translation now, with the title on the first 
     const result = await retryWithBackoff(
       () => model.generateContent(prompt),
       `Gemini translation to ${languageName}`,
-      2,    // maxRetries
-      5000  // baseDelay (5 seconds)
+      2,
+      5000
     );
     const response = result.response;
     const text = response.text();
@@ -278,23 +205,19 @@ Please provide the ${languageName} translation now, with the title on the first 
       responseLength: text.length,
     });
 
-    // Parse the response into lines
     const allLines = text
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0)
       .map(line => {
-        // Remove numbering from the start of lines (e.g., "1. ", "2. ", etc.)
-        // but keep the actual content
         return line.replace(/^[\d]+[\.\)]\s*/, '');
       })
-      .filter(line => line.length > 0); // Filter again after removing numbering
+      .filter(line => line.length > 0);
 
     if (allLines.length === 0) {
       throw new Error(`Failed to parse ${languageName} translation into lines`);
     }
 
-    // Extract title (first line) and content lines
     const translatedTitle = allLines[0];
     const translatedLines = allLines.slice(1);
 
@@ -316,43 +239,51 @@ Please provide the ${languageName} translation now, with the title on the first 
 }
 
 /**
- * Generates multi-language content for all supported languages
- * Creates English content first, then translates to Japanese and French
+ * Generates English content and translations for all configured languages
+ *
+ * @param date - Date to generate content for
+ * @param series - Optional series configuration
+ * @param translationLanguages - Languages to translate into (defaults to TRANSLATION_LANGUAGES)
  */
-export async function generateMultiLanguageContent(date: Date = new Date(), series?: Series): Promise<MultiLanguageContent> {
+export async function generateMultiLanguageContent(
+  date: Date = new Date(),
+  series?: Series,
+  translationLanguages: readonly string[] = TRANSLATION_LANGUAGES
+): Promise<MultiLanguageContent> {
   try {
-    logger.info('Starting multi-language content generation...', {
+    logger.info('Starting content generation...', {
       date: date.toISOString(),
-      seriesName: series?.name || 'default'
+      seriesName: series?.name || 'default',
+      translationLanguages: [...translationLanguages],
     });
 
     // Step 1: Generate English content
     logger.info('Generating English content...');
     const englishContent = await generateSpecialDayContent(date, series);
 
-    // Step 2: Translate to Japanese
-    logger.info('Translating to Japanese...');
-    const japaneseContent = await translateContent(englishContent, 'ja');
+    // Step 2: Translate to each configured language
+    const translations: Record<string, SummarizedContent> = {};
 
-    // Step 3: Translate to French
-    logger.info('Translating to French...');
-    const frenchContent = await translateContent(englishContent, 'fr');
+    for (const lang of translationLanguages) {
+      const languageName = LANGUAGE_NAMES[lang] || lang;
+      logger.info(`Translating to ${languageName}...`);
+      translations[lang] = await translateContent(englishContent, lang);
+    }
 
     logger.info('Successfully generated content for all languages', {
-      languages: ['en', 'ja', 'fr'],
-      englishLines: englishContent.lines.length,
-      japaneseLines: japaneseContent.lines.length,
-      frenchLines: frenchContent.lines.length,
+      english: englishContent.lines.length,
+      translations: Object.fromEntries(
+        Object.entries(translations).map(([lang, content]) => [lang, content.lines.length])
+      ),
     });
 
     return {
       en: englishContent,
-      ja: japaneseContent,
-      fr: frenchContent,
+      translations,
     };
 
   } catch (error) {
-    logger.error('Error in multi-language content generation', error);
-    throw new Error(`Failed to generate multi-language content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.error('Error in content generation', error);
+    throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

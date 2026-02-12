@@ -1,36 +1,33 @@
 /**
  * Gemini-TTS Service
- * Generates audio files using Google's Gemini-TTS API (gemini-2.5-flash-tts)
+ * Generates English audio files using Google's Gemini-TTS API (gemini-2.5-flash-tts)
  * Sentence-by-sentence generation for accurate audio boundaries
  */
 
-import type { AudioFile, LanguageCode, Series } from '../types/index';
+import type { AudioFile, Series } from '../types/index';
 import { Logger } from '../utils/logger';
 import { retryWithBackoff } from '../utils/retry';
 import { RateLimiter } from '../utils/rate-limiter';
 import { getCachedToken } from './gemini-tts-auth';
 import {
-  getLanguageCode,
+  LANGUAGE_CODE,
+  DEFAULT_SPEAKER,
   getDefaultPrompt,
   getAlternationPrompts,
-  DEFAULT_SPEAKERS,
   getValidVoice,
-  enhancePromptWithLanguage,
 } from '../config/gemini-tts-config';
 
 const logger = new Logger('GeminiTTS');
 
 /**
  * Gemini-TTS configuration for a specific audio generation request
- * Supports both single-voice and voice alternation modes
  */
 interface GeminiTTSConfig {
   speaker: string;
   prompt: string;
   alternateSpeaker?: string;
   alternatePrompt?: string;
-  languageCode: string;
-  enableAlternation: boolean;  // NEW: flag to enable voice alternation
+  enableAlternation: boolean;
 }
 
 /**
@@ -55,69 +52,39 @@ interface GeminiTTSRequest {
  * Gemini-TTS API response structure
  */
 interface GeminiTTSResponse {
-  audioContent: string; // Base64-encoded audio data (camelCase!)
+  audioContent: string;
   audioConfig?: {
     audioEncoding: string;
   };
 }
 
 /**
- * Get Gemini-TTS configuration from series settings
- * Supports both single-voice and voice alternation modes
- *
- * @param language - Language code (en, ja, fr)
- * @param series - Optional series configuration
- * @returns TTS configuration with voice and prompt settings
+ * Get Gemini-TTS configuration from series settings (English only)
  */
-function getGeminiTTSConfig(
-  language: LanguageCode,
-  series?: Series
-): GeminiTTSConfig {
-  const languageCode = getLanguageCode(language);
-
-  // Determine default voice from series or use fallback
-  const defaultVoice = getValidVoice(
-    series?.default_voice_name,
-    DEFAULT_SPEAKERS[language] // Falls back to 'Charon'
-  );
-
-  // Determine if alternation is enabled
+function getGeminiTTSConfig(series?: Series): GeminiTTSConfig {
+  const defaultVoice = getValidVoice(series?.default_voice_name, DEFAULT_SPEAKER);
   const enableAlternation = series?.enable_voice_alternation === true;
 
-  // Get default prompt (language-specific)
+  // Get prompt from series or use difficulty-based default
   let defaultPrompt: string;
-  const defaultPromptKey = `gemini_tts_prompt_${language}` as keyof Series;
-  const seriesDefaultPrompt = series?.[defaultPromptKey] as string | undefined;
-
-  if (seriesDefaultPrompt) {
-    defaultPrompt = enhancePromptWithLanguage(seriesDefaultPrompt, language);
+  if (series?.gemini_tts_prompt) {
+    defaultPrompt = `Generate speech in English. ${series.gemini_tts_prompt}`;
   } else {
-    const basePrompt = getDefaultPrompt(series?.difficulty_level);
-    defaultPrompt = enhancePromptWithLanguage(basePrompt, language);
+    defaultPrompt = getDefaultPrompt(series?.difficulty_level);
   }
 
-  // Handle voice alternation if enabled
   let alternateVoice: string | undefined;
   let alternatePrompt: string | undefined;
 
   if (enableAlternation) {
-    // Get alternate voice (with fallback to Kore if not specified)
-    alternateVoice = getValidVoice(
-      series?.alternate_voice_name,
-      'Kore' // Default alternate voice
-    );
+    alternateVoice = getValidVoice(series?.alternate_voice_name, 'Kore');
 
-    // Get alternate prompt (language-specific)
-    const altPromptKey = `gemini_tts_alt_prompt_${language}` as keyof Series;
-    const seriesAltPrompt = series?.[altPromptKey] as string | undefined;
-
-    if (seriesAltPrompt) {
-      alternatePrompt = enhancePromptWithLanguage(seriesAltPrompt, language);
+    if (series?.gemini_tts_alt_prompt) {
+      alternatePrompt = `Generate speech in English. ${series.gemini_tts_alt_prompt}`;
     } else {
-      // Use default alternation prompts
       const { defaultVoicePrompt, alternateVoicePrompt } = getAlternationPrompts();
-      defaultPrompt = enhancePromptWithLanguage(defaultVoicePrompt, language);
-      alternatePrompt = enhancePromptWithLanguage(alternateVoicePrompt, language);
+      defaultPrompt = defaultVoicePrompt;
+      alternatePrompt = alternateVoicePrompt;
     }
   }
 
@@ -126,7 +93,6 @@ function getGeminiTTSConfig(
     prompt: defaultPrompt,
     alternateSpeaker: alternateVoice,
     alternatePrompt: alternatePrompt,
-    languageCode,
     enableAlternation,
   };
 }
@@ -138,12 +104,10 @@ async function synthesizeSpeech(
   text: string,
   speaker: string,
   prompt: string,
-  languageCode: string,
   contextLines?: { allLines: string[]; currentIndex: number }
 ): Promise<Buffer> {
   const accessToken = await getCachedToken();
 
-  // Enhance prompt with context if provided
   let enhancedPrompt = prompt;
   if (contextLines) {
     const { allLines, currentIndex } = contextLines;
@@ -164,7 +128,7 @@ ${prompt}`;
       prompt: enhancedPrompt,
     },
     voice: {
-      languageCode,
+      languageCode: LANGUAGE_CODE,
       name: speaker,
       modelName: 'gemini-2.5-flash-tts',
     },
@@ -178,7 +142,7 @@ ${prompt}`;
     speaker,
     promptLength: enhancedPrompt.length,
     hasContext: !!contextLines,
-    languageCode,
+    languageCode: LANGUAGE_CODE,
     model: 'gemini-2.5-flash-tts',
   });
 
@@ -198,7 +162,6 @@ ${prompt}`;
 
   const data = await response.json() as GeminiTTSResponse;
 
-  // Log the response structure for debugging
   logger.debug('Gemini-TTS API response', {
     hasAudioContent: !!data.audioContent,
     hasAudioConfig: !!data.audioConfig,
@@ -212,7 +175,6 @@ ${prompt}`;
     throw new Error('No audio content returned from Gemini-TTS API');
   }
 
-  // Decode base64 audio content
   const audioBuffer = Buffer.from(data.audioContent, 'base64');
 
   logger.debug('Successfully synthesized speech', {
@@ -224,21 +186,11 @@ ${prompt}`;
 
 /**
  * Generates audio for a SINGLE sentence using Gemini-TTS
- * Returns audio buffer, estimated duration, and voice used
- *
- * @param text - Text to synthesize
- * @param speaker - Voice name to use
- * @param prompt - Voice prompt/instruction
- * @param languageCode - BCP-47 language code
- * @param sentenceIndex - Index of sentence (for logging)
- * @param totalSentences - Total number of sentences (for logging)
- * @returns Audio buffer, duration, and voice name used
  */
 async function generateSentenceAudio(
   text: string,
   speaker: string,
   prompt: string,
-  languageCode: string,
   sentenceIndex: number,
   totalSentences: number
 ): Promise<{ audioBuffer: Buffer; duration: number; voiceUsed: string }> {
@@ -249,13 +201,12 @@ async function generateSentenceAudio(
   });
 
   const audioBuffer = await retryWithBackoff(
-    async () => synthesizeSpeech(text, speaker, prompt, languageCode, undefined),
+    async () => synthesizeSpeech(text, speaker, prompt, undefined),
     `Gemini-TTS sentence ${sentenceIndex + 1}/${totalSentences}`,
-    3, // maxRetries
-    1000 // baseDelay (1 second)
+    3,
+    1000
   );
 
-  // Estimate duration for metadata (used for display purposes only)
   const duration = estimateAudioDuration(text);
 
   logger.debug(`Sentence ${sentenceIndex + 1} audio generated`, {
@@ -272,45 +223,37 @@ async function generateSentenceAudio(
 }
 
 /**
- * Generates INDIVIDUAL audio files for each sentence using Gemini-TTS
+ * Generates INDIVIDUAL English audio files for each sentence using Gemini-TTS
  * Supports voice alternation when enabled in series configuration
- * Rate limiting: 10 req/min (6+ seconds between calls)
  *
- * @param lines - Array of text lines to convert to speech
- * @param language - Language code (en, ja, or fr)
+ * @param lines - Array of English text lines to convert to speech
  * @param series - Optional series object with custom prompts and voice configuration
  */
 export async function generateAudioFiles(
   lines: string[],
-  language: LanguageCode = 'en',
   series?: Series
 ): Promise<AudioFile[]> {
   try {
-    logger.info(`Generating ${lines.length} individual audio files in ${language.toUpperCase()}`, {
+    logger.info(`Generating ${lines.length} individual English audio files`, {
       seriesId: series?.id,
       seriesName: series?.name,
       voiceAlternationEnabled: series?.enable_voice_alternation || false,
     });
 
-    const config = getGeminiTTSConfig(language, series);
+    const config = getGeminiTTSConfig(series);
 
-    // Log voice configuration
     logger.info('Voice configuration', {
       defaultVoice: config.speaker,
       alternateVoice: config.alternateSpeaker,
       alternationEnabled: config.enableAlternation,
-      hasCustomPrompts: !!(
-        series?.gemini_tts_prompt_en || series?.gemini_tts_prompt_ja || series?.gemini_tts_prompt_fr ||
-        series?.gemini_tts_alt_prompt_en || series?.gemini_tts_alt_prompt_ja || series?.gemini_tts_alt_prompt_fr
-      ),
+      hasCustomPrompt: !!series?.gemini_tts_prompt,
+      hasCustomAltPrompt: !!series?.gemini_tts_alt_prompt,
     });
 
-    // Initialize rate limiter: 10 req/min with 1 second safety buffer
     const rateLimiter = new RateLimiter(10, 1000);
     const audioFiles: AudioFile[] = [];
 
-    // Calculate estimated time
-    const estimatedTimeSeconds = lines.length * 7; // 7 seconds per call (6s min + 1s buffer)
+    const estimatedTimeSeconds = lines.length * 7;
     const estimatedTimeMinutes = Math.ceil(estimatedTimeSeconds / 60);
 
     logger.info('Starting sentence-by-sentence audio generation', {
@@ -324,9 +267,6 @@ export async function generateAudioFiles(
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // VOICE ALTERNATION LOGIC
-      // Odd-numbered indices (0, 2, 4...) use default voice
-      // Even-numbered indices (1, 3, 5...) use alternate voice (if enabled)
       const isAlternateSentence = i % 2 === 1;
       const useAlternateVoice = config.enableAlternation && isAlternateSentence;
 
@@ -345,17 +285,14 @@ export async function generateAudioFiles(
         selectedVoice,
       });
 
-      // Rate limiting: wait before each API call (except first)
       if (i > 0) {
         await rateLimiter.waitIfNeeded();
       }
 
-      // Generate audio for this sentence
       const { audioBuffer, duration, voiceUsed } = await generateSentenceAudio(
         line,
         selectedVoice,
         selectedPrompt,
-        config.languageCode,
         i,
         lines.length
       );
@@ -367,7 +304,6 @@ export async function generateAudioFiles(
         fileName: `sentence_${i}.mp3`,
         voiceUsed: voiceUsed,
         duration: duration,
-        // No startTime/endTime needed for individual files
       });
 
       logger.info(`✓ Sentence ${i + 1}/${lines.length} completed`, {
@@ -378,7 +314,6 @@ export async function generateAudioFiles(
       });
     }
 
-    // Log summary with voice usage statistics
     const voiceUsageStats: Record<string, number> = {};
     audioFiles.forEach(f => {
       if (f.voiceUsed) {
@@ -408,5 +343,5 @@ export function estimateAudioDuration(text: string): number {
   const wordCount = text.split(/\s+/).length;
   const wordsPerSecond = 2.5;
   const duration = Math.ceil(wordCount / wordsPerSecond);
-  return Math.max(duration, 1); // Minimum 1 second
+  return Math.max(duration, 1);
 }

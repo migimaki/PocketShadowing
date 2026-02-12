@@ -4,7 +4,6 @@ import type {
   LessonRecord,
   SentenceRecord,
   SummarizedContent,
-  LanguageCode,
   Series,
   GenerationLogRecord,
   SeriesGenerationResult,
@@ -31,103 +30,40 @@ function getSupabaseClient(): SupabaseClient {
 }
 
 /**
- * Fetches channel IDs for all supported languages, optionally filtered by series
+ * Gets or creates a channel for a series (English only, one channel per series)
  */
-export async function getChannelIdsByLanguage(seriesId?: string): Promise<Record<LanguageCode, string>> {
-  try {
-    const supabase = getSupabaseClient();
-    const languages: LanguageCode[] = ['en', 'ja', 'fr'];
-
-    const channelIds: Partial<Record<LanguageCode, string>> = {};
-
-    for (const language of languages) {
-      let query = supabase
-        .from("channels")
-        .select("id")
-        .eq("language", language);
-
-      // Filter by series if provided
-      if (seriesId) {
-        query = query.eq("series_id", seriesId);
-      }
-
-      const { data, error } = await query
-        .limit(1)
-        .single();
-
-      if (error) {
-        logger.warn(`Channel not found for language: ${language}${seriesId ? ` and series: ${seriesId}` : ''}`, error);
-        continue;
-      }
-
-      if (data) {
-        channelIds[language] = data.id;
-        logger.debug(`Found channel for ${language}${seriesId ? ` (series: ${seriesId})` : ''}: ${data.id}`);
-      }
-    }
-
-    // Verify all languages have channels
-    const missingLanguages = languages.filter(lang => !channelIds[lang]);
-    if (missingLanguages.length > 0) {
-      throw new Error(`Missing channels for languages: ${missingLanguages.join(', ')}${seriesId ? ` (series: ${seriesId})` : ''}`);
-    }
-
-    logger.info('Successfully fetched all channel IDs', channelIds);
-    return channelIds as Record<LanguageCode, string>;
-  } catch (error) {
-    logger.error("Error fetching channel IDs by language", error);
-    throw error;
-  }
-}
-
-/**
- * Gets or creates a channel for a specific language and series
- */
-export async function getOrCreateChannel(language: LanguageCode, seriesId: string): Promise<string> {
+export async function getOrCreateChannel(seriesId: string): Promise<string> {
   try {
     const supabase = getSupabaseClient();
 
     // Try to find existing channel
-    const { data: existingChannel, error: fetchError } = await supabase
+    const { data: existingChannel } = await supabase
       .from("channels")
       .select("id")
-      .eq("language", language)
       .eq("series_id", seriesId)
       .limit(1)
       .single();
 
     if (existingChannel) {
-      logger.debug(`Found existing channel for ${language} / series ${seriesId}: ${existingChannel.id}`);
+      logger.debug(`Found existing channel for series ${seriesId}: ${existingChannel.id}`);
       return existingChannel.id;
     }
 
     // Channel doesn't exist, create it
-    logger.info(`Creating new channel for ${language} / series ${seriesId}`);
+    logger.info(`Creating new channel for series ${seriesId}`);
 
-    // Fetch series details for channel naming
     const series = await getSeriesById(seriesId);
     if (!series) {
       throw new Error(`Series not found: ${seriesId}`);
     }
 
-    // Generate channel title based on language and series
-    const languageNames: Record<LanguageCode, string> = {
-      en: 'English',
-      ja: '日本語',
-      fr: 'Français'
-    };
-
-    const channelTitle = `${languageNames[language]} - ${series.name}`;
-    const channelSubtitle = series.concept.substring(0, 100); // First 100 chars
-
     const { data: newChannel, error: insertError } = await supabase
       .from("channels")
       .insert([{
-        title: channelTitle,
-        subtitle: channelSubtitle,
+        title: series.name,
+        subtitle: series.concept.substring(0, 100),
         description: series.concept,
         icon_name: 'globe.europe.africa.fill',
-        language: language,
         series_id: seriesId,
         cover_image_url: series.cover_image_url
       }])
@@ -138,31 +74,29 @@ export async function getOrCreateChannel(language: LanguageCode, seriesId: strin
       throw new Error(`Failed to create channel: ${insertError.message}`);
     }
 
-    logger.info(`Created new channel: ${channelTitle}`, { id: newChannel.id });
+    logger.info(`Created new channel: ${series.name}`, { id: newChannel.id });
     return newChannel.id;
 
   } catch (error) {
-    logger.error(`Error getting or creating channel for ${language} / ${seriesId}`, error);
+    logger.error(`Error getting or creating channel for series ${seriesId}`, error);
     throw error;
   }
 }
 
 /**
- * Checks if content for today already exists for a specific language and channel
+ * Checks if content for today already exists for a specific channel
  */
 export async function checkIfTodayContentExists(
-  language: LanguageCode,
   channelId: string
 ): Promise<boolean> {
   try {
     const supabase = getSupabaseClient();
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0];
 
     const { data, error } = await supabase
       .from("lessons")
       .select("id")
       .eq("date", today)
-      .eq("language", language)
       .eq("channel_id", channelId)
       .limit(1);
 
@@ -192,7 +126,6 @@ export async function getSeriesById(seriesId: string): Promise<Series | null> {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        // No rows returned
         logger.warn(`Series not found: ${seriesId}`);
         return null;
       }
@@ -233,7 +166,6 @@ export async function getAllActiveSeries(): Promise<Series[]> {
 
 /**
  * Fetches series by batch number
- * Used for multi-cron job scheduling to process different batches at different times
  */
 export async function getSeriesByBatch(batchNumber: number): Promise<Series[]> {
   try {
@@ -273,7 +205,6 @@ export async function getSeriesByName(name: string): Promise<Series | null> {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        // No rows returned
         logger.warn(`Series not found with name: ${name}`);
         return null;
       }
@@ -289,11 +220,10 @@ export async function getSeriesByName(name: string): Promise<Series | null> {
 }
 
 /**
- * Gets the default series ID (dynamically fetched from database)
+ * Gets the default series ID
  */
 export async function getDefaultSeriesId(): Promise<string> {
   try {
-    // Default series name can be configured via environment variable
     const defaultSeriesName = process.env.DEFAULT_SERIES_NAME || 'What day is it today';
 
     logger.info(`Fetching default series: ${defaultSeriesName}`);
@@ -312,33 +242,29 @@ export async function getDefaultSeriesId(): Promise<string> {
 }
 
 /**
- * Stores lesson and sentences in Supabase
- * Note: series_id is now inherited from the channel
+ * Stores an English lesson and its sentences in Supabase
+ * Returns the lesson ID and sentence IDs for subsequent translation storage
  */
 export async function storeLessonData(
   content: SummarizedContent,
   audioFiles: AudioFile[],
   sourceUrl: string,
-  language: LanguageCode,
-  channelId: string,
-  contentGroupId?: string
-): Promise<string> {
+  channelId: string
+): Promise<{ lessonId: string; sentenceIds: string[] }> {
   const supabase = getSupabaseClient();
   let lessonId: string | null = null;
   const uploadedFiles: string[] = [];
 
   try {
-    logger.info("Storing lesson data in Supabase...", { language, channelId });
+    logger.info("Storing English lesson data in Supabase...", { channelId });
 
-    // 1. Create lesson record first (so we have lessonId for audio path)
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    // 1. Create lesson record
+    const today = new Date().toISOString().split("T")[0];
     const lessonRecord: LessonRecord = {
       title: content.title,
       source_url: sourceUrl,
       date: today,
-      language,
       channel_id: channelId,
-      content_group_id: contentGroupId,
     };
 
     const { data: lessonData, error: lessonError } = await supabase
@@ -348,19 +274,18 @@ export async function storeLessonData(
       .single();
 
     if (lessonError) {
-      // Provide clearer error message for duplicate content
       if (lessonError.code === '23505' || lessonError.message.includes('unique constraint')) {
-        throw new Error(`Content for ${language} on ${today} already exists in channel ${channelId}. Skipping duplicate.`);
+        throw new Error(`Content for ${today} already exists in channel ${channelId}. Skipping duplicate.`);
       }
       throw new Error(`Failed to insert lesson: ${lessonError.message}`);
     }
 
     lessonId = lessonData.id;
-    logger.info("Lesson record created", { lessonId, title: content.title, language, channelId });
+    logger.info("Lesson record created", { lessonId, title: content.title, channelId });
 
-    // 2. Upload INDIVIDUAL audio files for each sentence
+    // 2. Upload individual audio files for each sentence
     const bucketName = "audio-files";
-    const timestamp = Date.now(); // Cache-busting parameter
+    const timestamp = Date.now();
     const sentenceRecords: Omit<SentenceRecord, "id">[] = [];
 
     logger.info('Uploading individual sentence audio files', {
@@ -376,7 +301,6 @@ export async function storeLessonData(
         throw new Error(`Missing audio file for sentence ${i}`);
       }
 
-      // Upload individual sentence audio file
       const storagePath = `${channelId}/${lessonId}/sentence_${i}.mp3`;
 
       logger.debug(`Uploading sentence ${i} audio`, {
@@ -396,25 +320,23 @@ export async function storeLessonData(
         throw new Error(`Failed to upload sentence ${i} audio: ${uploadError.message}`);
       }
 
-      uploadedFiles.push(storagePath); // Track for potential rollback
+      uploadedFiles.push(storagePath);
 
-      // Get public URL with cache-busting parameter
       const { data: { publicUrl } } = supabase.storage
         .from(bucketName)
         .getPublicUrl(storagePath);
 
       const audioUrl = `${publicUrl}?v=${timestamp}`;
 
-      // Create sentence record with individual audio URL
       sentenceRecords.push({
         lesson_id: lessonId!,
         order_index: i,
         text: line,
-        audio_url: audioUrl, // Individual sentence audio URL
+        audio_url: audioUrl,
         duration: audioFile.duration || estimateAudioDuration(line),
         voice_used: audioFile.voiceUsed,
-        start_time: null, // Not needed for individual files
-        end_time: null,   // Not needed for individual files
+        start_time: null,
+        end_time: null,
       });
 
       logger.debug(`✓ Sentence ${i} uploaded`, { url: audioUrl });
@@ -430,12 +352,14 @@ export async function storeLessonData(
       throw new Error(`Failed to insert sentences: ${sentencesError.message}`);
     }
 
+    const sentenceIds = sentencesData.map((s: { id: string }) => s.id);
+
     logger.info("All sentence records created with individual audio URLs", {
       count: sentencesData.length,
       totalAudioFiles: audioFiles.length,
     });
 
-    return lessonId;
+    return { lessonId, sentenceIds };
   } catch (error) {
     logger.error("Error storing lesson data", error);
 
@@ -460,7 +384,6 @@ export async function storeLessonData(
         cleanupErrors.push(rollbackMsg);
       }
 
-      // Attempt to clean up uploaded audio files
       if (uploadedFiles.length > 0) {
         logger.warn("Cleaning up uploaded audio files", {
           count: uploadedFiles.length,
@@ -485,15 +408,10 @@ export async function storeLessonData(
           }`;
           logger.error(cleanupMsg, { files: uploadedFiles });
           cleanupErrors.push(cleanupMsg);
-
-          // TODO: Consider implementing a background job to clean up orphaned files
-          // Query: SELECT * FROM storage.objects WHERE created_at < NOW() - INTERVAL '1 hour'
-          //        AND NOT EXISTS (SELECT 1 FROM sentences WHERE audio_url LIKE '%' || name || '%')
         }
       }
     }
 
-    // Throw error with cleanup status
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const fullMessage = cleanupErrors.length > 0
       ? `${errorMessage}. Cleanup issues: ${cleanupErrors.join('; ')}`
@@ -504,8 +422,78 @@ export async function storeLessonData(
 }
 
 /**
+ * Stores translations for a lesson's title and sentences
+ * Inserts into lesson_translations and sentence_translations tables
+ *
+ * @param lessonId - The English lesson ID
+ * @param sentenceIds - Ordered array of English sentence IDs (matching order_index)
+ * @param translations - Record of language code → translated content
+ */
+export async function storeTranslations(
+  lessonId: string,
+  sentenceIds: string[],
+  translations: Record<string, SummarizedContent>
+): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  try {
+    const languages = Object.keys(translations);
+    logger.info("Storing translations...", { lessonId, languages });
+
+    // 1. Insert lesson title translations
+    const lessonTranslations = languages.map(lang => ({
+      lesson_id: lessonId,
+      language: lang,
+      title: translations[lang].title,
+    }));
+
+    const { error: lessonTransError } = await supabase
+      .from("lesson_translations")
+      .insert(lessonTranslations);
+
+    if (lessonTransError) {
+      throw new Error(`Failed to insert lesson translations: ${lessonTransError.message}`);
+    }
+
+    logger.info("Lesson title translations stored", { languages });
+
+    // 2. Insert sentence translations
+    const sentenceTranslations: { sentence_id: string; language: string; text: string }[] = [];
+
+    for (const lang of languages) {
+      const translatedLines = translations[lang].lines;
+      for (let i = 0; i < Math.min(translatedLines.length, sentenceIds.length); i++) {
+        sentenceTranslations.push({
+          sentence_id: sentenceIds[i],
+          language: lang,
+          text: translatedLines[i],
+        });
+      }
+    }
+
+    if (sentenceTranslations.length > 0) {
+      const { error: sentenceTransError } = await supabase
+        .from("sentence_translations")
+        .insert(sentenceTranslations);
+
+      if (sentenceTransError) {
+        throw new Error(`Failed to insert sentence translations: ${sentenceTransError.message}`);
+      }
+    }
+
+    logger.info("All translations stored successfully", {
+      lessonTranslations: lessonTranslations.length,
+      sentenceTranslations: sentenceTranslations.length,
+    });
+
+  } catch (error) {
+    logger.error("Error storing translations", error);
+    throw error;
+  }
+}
+
+/**
  * Stores a generation log record in Supabase
- * Logs content generation runs with results, errors, and statistics
  */
 export async function storeGenerationLog(
   triggerType: 'cron' | 'manual' | 'api',
@@ -517,22 +505,14 @@ export async function storeGenerationLog(
   try {
     const supabase = getSupabaseClient();
 
-    // Calculate statistics
     const seriesCount = results.length;
-    let lessonsCreated = 0;
+    let lessonsCreated = results.length; // One lesson per series
     let audioFilesGenerated = 0;
 
     for (const result of results) {
-      const languageCount = Object.keys(result.lessons).length;
-      lessonsCreated += languageCount;
-
-      // Sum up sentence counts (each sentence = 1 audio file)
-      for (const lessonData of Object.values(result.lessons)) {
-        audioFilesGenerated += lessonData.sentenceCount;
-      }
+      audioFilesGenerated += result.sentenceCount;
     }
 
-    // Determine status
     let status: 'success' | 'partial' | 'failed';
     if (errors.length === 0) {
       status = 'success';
@@ -563,7 +543,6 @@ export async function storeGenerationLog(
       .insert([logRecord]);
 
     if (error) {
-      // Log the error but don't throw - we don't want logging failures to break generation
       logger.error("Failed to store generation log", error);
     } else {
       logger.info("Generation log stored successfully", {
@@ -574,177 +553,6 @@ export async function storeGenerationLog(
       });
     }
   } catch (error) {
-    // Log the error but don't throw - logging is secondary to actual generation
     logger.error("Error storing generation log", error);
   }
 }
-
-/**
- * Generates a public URL for a sentence audio file
- * Used to share English audio URLs with translation lessons
- */
-export function getPublicAudioUrl(
-  channelId: string,
-  lessonId: string,
-  sentenceIndex: number
-): string {
-  const supabase = getSupabaseClient();
-  const storagePath = `${channelId}/${lessonId}/sentence_${sentenceIndex}.mp3`;
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("audio-files").getPublicUrl(storagePath);
-  return `${publicUrl}?v=${Date.now()}`;
-}
-
-/**
- * Shared audio data structure for translation lessons
- */
-export interface SharedAudioData {
-  lineIndex: number;
-  audioUrl: string;
-  duration?: number;
-  voiceUsed?: string;
-}
-
-/**
- * Stores translation lesson that shares audio from English lesson
- * No audio upload needed - just references English audio URLs
- *
- * Used for JA/FR (and future translation languages) that share English audio
- */
-export async function storeLessonDataWithSharedAudio(
-  content: SummarizedContent,
-  sharedAudioData: SharedAudioData[],
-  sourceUrl: string,
-  language: LanguageCode,
-  channelId: string,
-  contentGroupId?: string
-): Promise<string> {
-  const supabase = getSupabaseClient();
-
-  try {
-    logger.info("Storing translation lesson with shared audio...", {
-      language,
-      channelId,
-      sentenceCount: content.lines.length,
-    });
-
-    const today = new Date().toISOString().split("T")[0];
-
-    // 1. Create lesson record
-    const lessonRecord: LessonRecord = {
-      title: content.title,
-      source_url: sourceUrl,
-      date: today,
-      language,
-      channel_id: channelId,
-      content_group_id: contentGroupId,
-    };
-
-    const { data: lessonData, error: lessonError } = await supabase
-      .from("lessons")
-      .insert([lessonRecord])
-      .select()
-      .single();
-
-    if (lessonError) {
-      if (
-        lessonError.code === "23505" ||
-        lessonError.message.includes("unique constraint")
-      ) {
-        throw new Error(
-          `Content for ${language} on ${today} already exists in channel ${channelId}. Skipping duplicate.`
-        );
-      }
-      throw new Error(`Failed to insert lesson: ${lessonError.message}`);
-    }
-
-    logger.info("Translation lesson record created", {
-      lessonId: lessonData.id,
-      title: content.title,
-      language,
-    });
-
-    // 2. Create sentence records pointing to English audio
-    const sentenceRecords: Omit<SentenceRecord, "id">[] = content.lines.map(
-      (line, i) => ({
-        lesson_id: lessonData.id,
-        order_index: i,
-        text: line, // Translation text
-        audio_url: sharedAudioData[i].audioUrl, // English audio URL
-        duration: sharedAudioData[i].duration ?? 0,
-        voice_used: sharedAudioData[i].voiceUsed,
-        start_time: undefined,
-        end_time: undefined,
-      })
-    );
-
-    const { error: sentencesError } = await supabase
-      .from("sentences")
-      .insert(sentenceRecords);
-
-    if (sentencesError) {
-      // Rollback lesson
-      logger.warn("Rolling back translation lesson due to sentence error", {
-        lessonId: lessonData.id,
-        error: sentencesError.message,
-      });
-      await supabase.from("lessons").delete().eq("id", lessonData.id);
-      throw new Error(`Failed to insert sentences: ${sentencesError.message}`);
-    }
-
-    logger.info("Translation lesson stored successfully with shared audio", {
-      lessonId: lessonData.id,
-      language,
-      sentenceCount: sentenceRecords.length,
-    });
-
-    return lessonData.id;
-  } catch (error) {
-    logger.error("Error storing translation lesson", error);
-    throw error;
-  }
-}
-
-/**
- * Database Schema SQL for reference (updated for multi-language support):
- *
- * CREATE TABLE channels (
- *   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- *   name TEXT NOT NULL,
- *   description TEXT,
- *   language VARCHAR(10) NOT NULL,
- *   icon_name TEXT,
- *   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
- * );
- *
- * CREATE TABLE lessons (
- *   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- *   title TEXT NOT NULL,
- *   source_url TEXT NOT NULL,
- *   date DATE NOT NULL,
- *   language VARCHAR(10) NOT NULL,
- *   channel_id UUID NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
- *   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
- *   CONSTRAINT unique_lesson_per_date_language_channel UNIQUE (date, language, channel_id)
- * );
- *
- * CREATE TABLE sentences (
- *   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- *   lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
- *   order_index INTEGER NOT NULL,
- *   text TEXT NOT NULL,
- *   audio_url TEXT NOT NULL,
- *   duration INTEGER NOT NULL,
- *   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
- * );
- *
- * CREATE INDEX idx_sentences_lesson_id ON sentences(lesson_id);
- * CREATE INDEX idx_lessons_date ON lessons(date);
- * CREATE INDEX idx_lessons_language ON lessons(language);
- * CREATE INDEX idx_lessons_channel_id ON lessons(channel_id);
- * CREATE INDEX idx_lessons_language_date ON lessons(language, date DESC);
- *
- * -- Storage bucket: audio-files (public)
- * -- Storage path: {channelId}/{lessonId}/line_XXX.mp3
- */

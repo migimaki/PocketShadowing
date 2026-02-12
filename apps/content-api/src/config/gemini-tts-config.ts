@@ -1,9 +1,10 @@
 /**
  * Gemini-TTS Configuration
  * Voice mappings, prompt templates, and speaker catalog
+ * English-only TTS (translations are text-only, no audio)
  */
 
-import type { LanguageCode, DifficultyLevel } from '../types/index';
+import type { DifficultyLevel } from '../types/index';
 
 /**
  * Valid Gemini-TTS voice names
@@ -38,112 +39,36 @@ export const ALL_VALID_VOICES = [
 export type GeminiVoiceName = typeof ALL_VALID_VOICES[number];
 
 /**
- * Maps Google Cloud Neural2 voices to Gemini-TTS speaker names
- * Valid Gemini TTS voices:
- * Female: Achernar, Aoede, Autonoe, Callirrhoe, Despina, Erinome, Gacrux,
- *         Kore, Laomedeia, Leda, Pulcherrima, Sulafat, Vindemiatrix, Zephyr
- * Male: Achird, Algenib, Algieba, Alnilam, Charon, Enceladus, Fenrir,
- *       Iapetus, Orus, Puck, Rasalgethi, Sadachbia, Sadaltager, Schedar,
- *       Umbriel, Zubenelgenubi
+ * Default speaker for English TTS
  */
-export const GEMINI_SPEAKER_MAPPING: Record<LanguageCode, Record<string, string>> = {
-  en: {
-    'en-US-Neural2-J': 'Charon',      // Male, clear, professional
-    'en-US-Neural2-F': 'Kore',        // Female, professional
-    'en-US-Neural2-D': 'Puck',        // Male, deep
-    'en-US-Neural2-H': 'Aoede',       // Female, friendly
-  },
-  ja: {
-    'ja-JP-Neural2-C': 'Charon',      // Male, professional
-    'ja-JP-Neural2-B': 'Kore',        // Female voice
-    'ja-JP-Neural2-D': 'Puck',        // Deep male voice
-    'ja-JP-Wavenet-A': 'Aoede',       // Alternative female
-  },
-  fr: {
-    'fr-FR-Neural2-B': 'Charon',      // Male, clear
-    'fr-FR-Neural2-A': 'Kore',        // Female, natural
-    'fr-FR-Neural2-D': 'Puck',        // Male, deep
-    'fr-FR-Wavenet-C': 'Aoede',       // Female, warm
-  },
-};
+export const DEFAULT_SPEAKER: GeminiVoiceName = 'Charon';
 
 /**
- * Default Gemini-TTS speakers for each language
+ * English language code for Gemini-TTS
  */
-export const DEFAULT_SPEAKERS: Record<LanguageCode, GeminiVoiceName> = {
-  en: 'Charon',  // Male, clear voice
-  ja: 'Charon',  // Male, clear voice
-  fr: 'Charon',  // Male, clear voice
-};
+export const LANGUAGE_CODE = 'en-US';
 
 /**
  * Default prompt templates by difficulty level
- * English prompts work for all languages in Gemini-TTS
  */
 export const DEFAULT_PROMPTS_BY_DIFFICULTY: Record<DifficultyLevel, string> = {
-  beginner: 'Speak slowly and clearly as if teaching a beginner student. Use natural pauses between phrases. Sound warm and encouraging.',
-  intermediate: 'Speak naturally with normal pacing. Use expressive intonation to make content engaging. Sound conversational but clear.',
-  advanced: 'Speak naturally and confidently at normal pace. Use sophisticated intonation. Sound professional and authoritative.',
+  beginner: 'Generate speech in English. Speak slowly and clearly as if teaching a beginner student. Use natural pauses between phrases. Sound warm and encouraging.',
+  intermediate: 'Generate speech in English. Speak naturally with normal pacing. Use expressive intonation to make content engaging. Sound conversational but clear.',
+  advanced: 'Generate speech in English. Speak naturally and confidently at normal pace. Use sophisticated intonation. Sound professional and authoritative.',
 };
 
 /**
  * Voice alternation prompts for conversational content
- * Used when series have voice alternation enabled
- * English prompts work for all languages in Gemini-TTS
  */
 export const VOICE_ALTERNATION_PROMPTS = {
-  defaultVoicePrompt: 'Speak as Person A - a friendly narrator explaining concepts naturally.',
-  alternateVoicePrompt: 'Speak as Person B - an engaging speaker with a slightly different tone to create natural dialogue.',
+  defaultVoicePrompt: 'Generate speech in English. Speak as Person A - a friendly narrator explaining concepts naturally.',
+  alternateVoicePrompt: 'Generate speech in English. Speak as Person B - an engaging speaker with a slightly different tone to create natural dialogue.',
 };
-
-/**
- * Maps language codes to BCP-47 language codes used by Gemini-TTS
- */
-export function getLanguageCode(language: LanguageCode): string {
-  const languageCodeMap: Record<LanguageCode, string> = {
-    en: 'en-US',
-    ja: 'ja-JP',
-    fr: 'fr-FR',
-  };
-
-  return languageCodeMap[language];
-}
-
-/**
- * Maps language codes to full language names for explicit TTS instructions
- */
-export function getLanguageName(language: LanguageCode): string {
-  const languageNames: Record<LanguageCode, string> = {
-    en: 'English',
-    ja: 'Japanese',
-    fr: 'French',
-  };
-  return languageNames[language];
-}
-
-/**
- * Enhances a prompt with explicit language specification
- * Ensures Gemini TTS generates audio in the correct language
- */
-export function enhancePromptWithLanguage(prompt: string, language: LanguageCode): string {
-  const languageName = getLanguageName(language);
-  return `Generate speech in ${languageName}. ${prompt}`;
-}
-
-/**
- * Gets the Gemini-TTS speaker name from a Google Cloud voice name
- * Falls back to default speaker if mapping not found
- */
-export function mapVoiceToSpeaker(voiceName: string, language: LanguageCode): string {
-  const mapping = GEMINI_SPEAKER_MAPPING[language];
-  return mapping[voiceName] || DEFAULT_SPEAKERS[language];
-}
 
 /**
  * Gets the default prompt for a given difficulty level
  */
 export function getDefaultPrompt(difficulty?: DifficultyLevel): string {
-  // Default to intermediate if difficulty not specified
   const level = difficulty || 'intermediate';
   return DEFAULT_PROMPTS_BY_DIFFICULTY[level];
 }
@@ -160,8 +85,6 @@ export function getAlternationPrompts(): {
 
 /**
  * Validates if a voice name is valid for Gemini-TTS
- * @param voiceName - Voice name to validate
- * @returns true if valid, false otherwise
  */
 export function isValidGeminiVoice(voiceName: string | undefined | null): voiceName is GeminiVoiceName {
   if (!voiceName) return false;
@@ -170,9 +93,6 @@ export function isValidGeminiVoice(voiceName: string | undefined | null): voiceN
 
 /**
  * Gets a valid voice name with fallback to default
- * @param voiceName - Voice name to validate
- * @param fallback - Fallback voice (defaults to 'Charon')
- * @returns Valid voice name
  */
 export function getValidVoice(
   voiceName: string | undefined | null,

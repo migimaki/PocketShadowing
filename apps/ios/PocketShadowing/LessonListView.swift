@@ -247,7 +247,7 @@ struct LessonRowView: View {
 }
 
 #Preview {
-    @Previewable @State var channel = Channel.euroNews
+    @Previewable @State var channel = Channel(title: "Preview Channel", description: "Preview")
 
     NavigationStack {
         LessonListView(channel: channel)
