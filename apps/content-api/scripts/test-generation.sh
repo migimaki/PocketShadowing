@@ -5,9 +5,9 @@
 
 set -e
 
-# Load environment variables
+# Load API_SECRET from .env (handles files with multi-line JSON values)
 if [ -f .env ]; then
-  export $(cat .env | grep -v '^#' | xargs)
+  API_SECRET=$(grep '^API_SECRET=' .env | head -1 | cut -d'=' -f2-)
 fi
 
 # Check if API_SECRET is set
@@ -21,12 +21,7 @@ if [ "$1" == "local" ]; then
   BASE_URL="http://localhost:3000"
   shift
 else
-  # Get production URL from Vercel
-  BASE_URL=$(vercel ls 2>/dev/null | grep "walking-talking-content" | head -1 | awk '{print "https://"$2}')
-  if [ -z "$BASE_URL" ]; then
-    echo "Error: Could not determine production URL. Run 'vercel ls' to check deployments."
-    exit 1
-  fi
+  BASE_URL="https://walking-talking-content.vercel.app"
 fi
 
 echo "Testing endpoint: $BASE_URL/api/generate-content"

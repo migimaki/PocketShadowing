@@ -27,7 +27,11 @@ class UserSettings {
     static let availableLanguages = [
         Language(code: "en", name: "English", nativeName: "English"),
         Language(code: "ja", name: "Japanese", nativeName: "日本語"),
-        Language(code: "fr", name: "French", nativeName: "Français")
+        Language(code: "fr", name: "French", nativeName: "Français"),
+        Language(code: "zh-Hans", name: "Chinese (Simplified)", nativeName: "简体中文"),
+        Language(code: "zh-Hant", name: "Chinese (Traditional)", nativeName: "繁體中文"),
+        Language(code: "ko", name: "Korean", nativeName: "한국어"),
+        Language(code: "es", name: "Spanish", nativeName: "Español")
     ]
 
     /// Get language object from code
@@ -40,7 +44,32 @@ class UserSettings {
         language(for: nativeLanguage) ?? Self.availableLanguages[0]
     }
 
-    private init() {}
+    private init() {
+        // On first launch, default native language to the device's system language
+        // if it matches one of our supported languages (Japanese or French)
+        if UserDefaults.standard.object(forKey: "nativeLanguage") == nil {
+            nativeLanguage = Self.detectSystemLanguage()
+        }
+    }
+
+    /// Detects the system language and returns a supported language code
+    private static func detectSystemLanguage() -> String {
+        guard let languageCode = Locale.current.language.languageCode?.identifier else {
+            return "en"
+        }
+        switch languageCode {
+        case "ja", "fr", "ko", "es":
+            return languageCode
+        case "zh":
+            // Distinguish Simplified vs Traditional Chinese by script
+            if Locale.current.language.script == .init("Hant") {
+                return "zh-Hant"
+            }
+            return "zh-Hans"
+        default:
+            return "en"
+        }
+    }
 }
 
 /// Language model

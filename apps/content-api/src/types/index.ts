@@ -3,7 +3,7 @@
  */
 
 // Translation languages supported (add new languages here)
-export const TRANSLATION_LANGUAGES = ['ja', 'fr'] as const;
+export const TRANSLATION_LANGUAGES = ['ja', 'fr', 'zh-Hans', 'zh-Hant', 'ko', 'es'] as const;
 export type TranslationLanguage = (typeof TRANSLATION_LANGUAGES)[number];
 
 // Difficulty levels
