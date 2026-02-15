@@ -47,7 +47,8 @@ class LessonRepository {
                     subtitle: channelDTO.subtitle ?? "",
                     description: channelDTO.description,
                     coverImageURL: channelDTO.cover_image_url,
-                    iconName: channelDTO.icon_name
+                    iconName: channelDTO.icon_name,
+                    genre: channelDTO.genre ?? "Beginner"
                 )
 
                 modelContext.insert(channel)
@@ -55,10 +56,52 @@ class LessonRepository {
                 existingChannel.title = channelDTO.title
                 existingChannel.subtitle = channelDTO.subtitle ?? existingChannel.subtitle
                 existingChannel.coverImageURL = channelDTO.cover_image_url
+                existingChannel.genre = channelDTO.genre ?? existingChannel.genre
             }
         }
 
         try modelContext.save()
+    }
+
+    // MARK: - Follow Methods
+
+    /// Fetch channel follows for the current user, ordered by newest first
+    func fetchFollowedChannels() async throws -> [UserChannelFollowDTO] {
+        guard let userId = client.auth.currentUser?.id else { return [] }
+
+        let response: [UserChannelFollowDTO] = try await client.database
+            .from("user_channel_follows")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+
+        return response
+    }
+
+    /// Follow a channel for the current user
+    func followChannel(channelId: UUID) async throws {
+        guard let userId = client.auth.currentUser?.id else { return }
+
+        let dto = UserChannelFollowInsertDTO(user_id: userId, channel_id: channelId)
+
+        try await client.database
+            .from("user_channel_follows")
+            .insert(dto)
+            .execute()
+    }
+
+    /// Unfollow a channel for the current user
+    func unfollowChannel(channelId: UUID) async throws {
+        guard let userId = client.auth.currentUser?.id else { return }
+
+        try await client.database
+            .from("user_channel_follows")
+            .delete()
+            .eq("user_id", value: userId.uuidString)
+            .eq("channel_id", value: channelId.uuidString)
+            .execute()
     }
 
     // MARK: - Lesson Methods

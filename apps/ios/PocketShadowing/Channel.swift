@@ -16,17 +16,21 @@ final class Channel {
     var channelDescription: String
     var coverImageURL: String?
     var iconName: String
+    var genre: String
+
+    @Transient var isFollowed: Bool = false
 
     @Relationship(deleteRule: .cascade)
     var lessons: [Lesson]
 
-    init(id: UUID = UUID(), title: String, subtitle: String = "", description: String, coverImageURL: String? = nil, iconName: String = "globe") {
+    init(id: UUID = UUID(), title: String, subtitle: String = "", description: String, coverImageURL: String? = nil, iconName: String = "globe", genre: String = "Beginner") {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.channelDescription = description
         self.coverImageURL = coverImageURL
         self.iconName = iconName
+        self.genre = genre
         self.lessons = []
     }
 }

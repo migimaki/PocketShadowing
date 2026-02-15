@@ -17,10 +17,11 @@ struct ChannelDTO: Codable {
     let description: String
     let cover_image_url: String?
     let icon_name: String
+    let genre: String?
     let created_at: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, description, created_at
+        case id, title, subtitle, description, genre, created_at
         case cover_image_url
         case icon_name
     }
@@ -113,4 +114,18 @@ struct LessonTranslationDTO: Codable {
 struct LessonWithSentences: Codable {
     let lesson: LessonDTO
     let sentences: [SentenceDTO]
+}
+
+/// User channel follow data from Supabase
+struct UserChannelFollowDTO: Codable {
+    let id: UUID
+    let user_id: UUID
+    let channel_id: UUID
+    let created_at: String?
+}
+
+/// DTO for inserting a follow (without server-generated fields)
+struct UserChannelFollowInsertDTO: Codable {
+    let user_id: UUID
+    let channel_id: UUID
 }

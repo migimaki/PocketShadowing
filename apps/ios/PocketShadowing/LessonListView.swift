@@ -15,6 +15,7 @@ struct LessonListView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showError = false
+    @State private var isFollowed = false
 
     // Query lessons for this specific channel
     private var lessons: [Lesson] {
@@ -47,10 +48,12 @@ struct LessonListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: fetchLessonsFromSupabase) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
+                Button {
+                    toggleFollow()
+                } label: {
+                    Text(isFollowed ? "Following" : "Follow")
+                        .fontWeight(isFollowed ? .regular : .semibold)
                 }
-                .disabled(isLoading)
             }
         }
         .alert("Error", isPresented: $showError) {
@@ -63,6 +66,7 @@ struct LessonListView: View {
             if lessons.isEmpty {
                 fetchLessonsFromSupabase()
             }
+            loadFollowState()
         }
     }
 
@@ -101,7 +105,7 @@ struct LessonListView: View {
         ContentUnavailableView {
             Label("No Lessons", systemImage: "book.closed")
         } description: {
-            Text("Pull down to refresh or tap the refresh button to load lessons from \(channel.title)")
+            Text("Pull down to refresh to load lessons from \(channel.title)")
         } actions: {
             Button("Refresh") {
                 fetchLessonsFromSupabase()
@@ -110,7 +114,37 @@ struct LessonListView: View {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Follow Actions
+
+    private func loadFollowState() {
+        Task {
+            let repository = LessonRepository()
+            let follows = try? await repository.fetchFollowedChannels()
+            let followedIds = Set(follows?.map { $0.channel_id } ?? [])
+            isFollowed = followedIds.contains(channel.id)
+            channel.isFollowed = isFollowed
+        }
+    }
+
+    private func toggleFollow() {
+        Task {
+            let repository = LessonRepository()
+            do {
+                if isFollowed {
+                    try await repository.unfollowChannel(channelId: channel.id)
+                    isFollowed = false
+                } else {
+                    try await repository.followChannel(channelId: channel.id)
+                    isFollowed = true
+                }
+                channel.isFollowed = isFollowed
+            } catch {
+                print("Failed to toggle follow: \(error)")
+            }
+        }
+    }
+
+    // MARK: - Lesson Actions
 
     private func fetchLessonsFromSupabase() {
         Task {
