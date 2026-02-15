@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AuthManager.self) private var authManager
     @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
 
     var body: some View {
@@ -49,6 +50,21 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+
+                Section {
+                    Button(role: .destructive) {
+                        Task {
+                            await authManager.signOut()
+                            dismiss()
+                        }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Sign Out")
+                            Spacer()
+                        }
+                    }
+                }
                 }
                 .scrollContentBackground(.hidden)
             }
@@ -67,4 +83,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .environment(AuthManager())
 }

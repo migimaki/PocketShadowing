@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct PocketShadowingApp: App {
+    @State private var authManager = AuthManager()
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Channel.self,
@@ -49,8 +51,22 @@ struct PocketShadowingApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ChannelListView()
-                .preferredColorScheme(.dark)  // Force dark mode colors for light text/icons
+            Group {
+                if authManager.isLoading {
+                    ZStack {
+                        GradientBackground()
+                        ProgressView()
+                    }
+                } else if authManager.isAuthenticated && authManager.hasCompletedOnboarding {
+                    ChannelListView()
+                } else if authManager.isAuthenticated {
+                    OnboardingView()
+                } else {
+                    WelcomeView()
+                }
+            }
+            .environment(authManager)
+            .preferredColorScheme(.dark)  // Force dark mode colors for light text/icons
                 .onAppear {
                     // Make navigation bar transparent with light text
                     let appearance = UINavigationBarAppearance()
