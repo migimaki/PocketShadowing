@@ -17,6 +17,7 @@ final class Lesson {
     var sourceURL: String
     var createdDate: Date
     var audioURL: String?
+    var translatedTitle: String?
 
     @Relationship(deleteRule: .cascade)
     var sentences: [Sentence]
@@ -44,6 +45,10 @@ final class Lesson {
 
     var estimatedTotalDuration: TimeInterval {
         sentences.reduce(0.0) { $0 + $1.estimatedDuration }
+    }
+
+    var displayTitle: String {
+        translatedTitle ?? title
     }
 
     var formattedDate: String {

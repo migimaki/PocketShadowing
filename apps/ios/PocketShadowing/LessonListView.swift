@@ -16,6 +16,7 @@ struct LessonListView: View {
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var isFollowed = false
+    @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
 
     // Query lessons for this specific channel
     private var lessons: [Lesson] {
@@ -65,8 +66,13 @@ struct LessonListView: View {
             // Auto-fetch if no lessons
             if lessons.isEmpty {
                 fetchLessonsFromSupabase()
+            } else {
+                loadTranslatedTitles()
             }
             loadFollowState()
+        }
+        .onChange(of: nativeLanguage) { _, _ in
+            loadTranslatedTitles()
         }
     }
 
@@ -169,12 +175,27 @@ struct LessonListView: View {
                 sentencesDict[lessonDTO.id] = sentences
             }
 
+            // Fetch lesson title translations if native language is not English
+            print("[LessonListView] fetchLessonsAsync: nativeLanguage = '\(nativeLanguage)'")
+            var translations: [UUID: String] = [:]
+            if nativeLanguage != "en" {
+                let lessonIds = lessonDTOs.map { $0.id }
+                translations = try await repository.fetchLessonTranslations(
+                    lessonIds: lessonIds,
+                    targetLanguage: nativeLanguage
+                )
+                print("[LessonListView] fetchLessonsAsync: fetched \(translations.count) translations")
+            } else {
+                print("[LessonListView] fetchLessonsAsync: skipping translations (language is English)")
+            }
+
             // Save to SwiftData
             try repository.saveLessonsToSwiftData(
                 lessonDTOs,
                 sentences: sentencesDict,
                 modelContext: modelContext,
-                channel: channel
+                channel: channel,
+                translations: translations
             )
 
             print("✅ Successfully fetched \(lessonDTOs.count) lessons for channel '\(channel.title)' from Supabase")
@@ -186,6 +207,37 @@ struct LessonListView: View {
         }
 
         isLoading = false
+    }
+
+    private func loadTranslatedTitles() {
+        print("[LessonListView] loadTranslatedTitles: nativeLanguage = '\(nativeLanguage)', lessons count = \(lessons.count)")
+        guard nativeLanguage != "en" else {
+            // Clear translations when language is English
+            for lesson in lessons where lesson.translatedTitle != nil {
+                lesson.translatedTitle = nil
+            }
+            try? modelContext.save()
+            return
+        }
+
+        let lessonIds = lessons.map { $0.id }
+        Task { @MainActor in
+            do {
+                let repository = LessonRepository()
+                let translations = try await repository.fetchLessonTranslations(
+                    lessonIds: lessonIds,
+                    targetLanguage: nativeLanguage
+                )
+                print("[LessonListView] loadTranslatedTitles: got \(translations.count) translations for \(lessonIds.count) lessons")
+                for lesson in lessons {
+                    lesson.translatedTitle = translations[lesson.id]
+                }
+                try modelContext.save()
+                print("[LessonListView] loadTranslatedTitles: saved to SwiftData")
+            } catch {
+                print("[LessonListView] Failed to load lesson translations: \(error)")
+            }
+        }
     }
 
     private func deleteLessons(offsets: IndexSet) {
@@ -264,7 +316,7 @@ struct LessonRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             // Title
-            Text(lesson.title)
+            Text(lesson.displayTitle)
                 .font(.headline)
                 .lineLimit(2)
 

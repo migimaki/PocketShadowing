@@ -110,7 +110,7 @@ struct PlayerView: View {
             }
             }
         }
-        .navigationTitle(viewModel.lesson.title)
+        .navigationTitle(viewModel.lesson.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {

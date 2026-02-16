@@ -193,7 +193,7 @@ class LessonRepository {
     func fetchTranslationSentences(lessonId: UUID, targetLanguage: String) async throws -> [String] {
         // Get sentences for this lesson (to know the order)
         let sentences = try await fetchSentences(for: lessonId)
-        let sentenceIds = sentences.map { $0.id.uuidString }
+        let sentenceIds = sentences.map { $0.id.uuidString.lowercased() }
 
         guard !sentenceIds.isEmpty else {
             return []
@@ -215,8 +215,36 @@ class LessonRepository {
         return sentences.compactMap { translationMap[$0.id] }
     }
 
+    /// Fetch lesson title translations for multiple lessons in a target language
+    func fetchLessonTranslations(lessonIds: [UUID], targetLanguage: String) async throws -> [UUID: String] {
+        guard !lessonIds.isEmpty else {
+            print("[LessonRepo] fetchLessonTranslations: empty lessonIds, skipping")
+            return [:]
+        }
+
+        let lessonIdStrings = lessonIds.map { $0.uuidString.lowercased() }
+        print("[LessonRepo] fetchLessonTranslations: querying \(lessonIds.count) lessons for language '\(targetLanguage)'")
+        print("[LessonRepo] fetchLessonTranslations: lessonIds = \(lessonIdStrings)")
+
+        let translations: [LessonTranslationDTO] = try await client.database
+            .from("lesson_translations")
+            .select()
+            .in("lesson_id", values: lessonIdStrings)
+            .eq("language", value: targetLanguage)
+            .execute()
+            .value
+
+        let result = Dictionary(uniqueKeysWithValues: translations.map { ($0.lesson_id, $0.title) })
+        print("[LessonRepo] fetchLessonTranslations: got \(result.count) translations")
+        for (id, title) in result {
+            print("[LessonRepo]   \(id): \(title)")
+        }
+        return result
+    }
+
     /// Save lessons and sentences to SwiftData
-    func saveLessonsToSwiftData(_ lessonDTOs: [LessonDTO], sentences: [UUID: [SentenceDTO]], modelContext: ModelContext, channel: Channel) throws {
+    func saveLessonsToSwiftData(_ lessonDTOs: [LessonDTO], sentences: [UUID: [SentenceDTO]], modelContext: ModelContext, channel: Channel, translations: [UUID: String] = [:]) throws {
+        print("[LessonRepo] saveLessonsToSwiftData: \(lessonDTOs.count) lessons, \(translations.count) translations")
         for lessonDTO in lessonDTOs {
             let descriptor = FetchDescriptor<Lesson>(
                 predicate: #Predicate { $0.id == lessonDTO.id }
@@ -233,6 +261,8 @@ class LessonRepository {
                     sourceURL: lessonDTO.source_url,
                     audioURL: lessonDTO.audio_url
                 )
+                lesson.translatedTitle = translations[lessonDTO.id]
+                print("[LessonRepo] New lesson '\(lessonDTO.title)' translatedTitle: \(lesson.translatedTitle ?? "nil")")
                 lesson.channel = channel
 
                 if let sentenceDTOs = sentences[lessonDTO.id] {
@@ -251,6 +281,9 @@ class LessonRepository {
                 }
 
                 modelContext.insert(lesson)
+            } else if let existingLesson = existingLessons.first {
+                existingLesson.translatedTitle = translations[lessonDTO.id]
+                print("[LessonRepo] Existing lesson '\(existingLesson.title)' translatedTitle: \(existingLesson.translatedTitle ?? "nil")")
             }
         }
 

@@ -15,6 +15,7 @@ struct ChannelListView: View {
     @State private var errorMessage: String?
     @State private var followedChannelIds: Set<UUID> = []
     @State private var followOrder: [UUID] = [] // newest follow first
+    @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
 
     private let repository = LessonRepository()
 
@@ -94,10 +95,12 @@ struct ChannelListView: View {
                     Task {
                         await fetchChannelsFromSupabase()
                         await loadFollowStates()
+                        await loadLessonTranslations()
                     }
                 } else {
                     Task {
                         await loadFollowStates()
+                        await loadLessonTranslations()
                     }
                 }
             }
@@ -113,6 +116,11 @@ struct ChannelListView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsView()
             }
+            .onChange(of: nativeLanguage) { _, _ in
+                Task {
+                    await loadLessonTranslations()
+                }
+            }
         }
     }
 
@@ -123,6 +131,41 @@ struct ChannelListView: View {
             followOrder = follows.map { $0.channel_id }
         } catch {
             print("Failed to load follow states: \(error)")
+        }
+    }
+
+    private func loadLessonTranslations() async {
+        print("[ChannelListView] loadLessonTranslations: nativeLanguage = '\(nativeLanguage)'")
+        guard nativeLanguage != "en" else {
+            // Clear translations when language is English
+            let allLessons = channels.flatMap { $0.lessons }
+            for lesson in allLessons where lesson.translatedTitle != nil {
+                lesson.translatedTitle = nil
+            }
+            try? modelContext.save()
+            return
+        }
+
+        let allLessons = channels.flatMap { $0.lessons }
+        let lessonIds = allLessons.map { $0.id }
+        guard !lessonIds.isEmpty else {
+            print("[ChannelListView] loadLessonTranslations: no lessons to translate")
+            return
+        }
+
+        do {
+            let translations = try await repository.fetchLessonTranslations(
+                lessonIds: lessonIds,
+                targetLanguage: nativeLanguage
+            )
+            print("[ChannelListView] loadLessonTranslations: got \(translations.count) translations for \(lessonIds.count) lessons")
+            for lesson in allLessons {
+                lesson.translatedTitle = translations[lesson.id]
+            }
+            try modelContext.save()
+            print("[ChannelListView] loadLessonTranslations: saved to SwiftData")
+        } catch {
+            print("[ChannelListView] Failed to load lesson translations: \(error)")
         }
     }
 
@@ -222,7 +265,7 @@ struct MyChannelCard: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
-                            Text(lesson.title)
+                            Text(lesson.displayTitle)
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(2)
