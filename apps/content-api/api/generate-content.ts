@@ -24,6 +24,10 @@ const requestSchema = z.object({
     .min(1, 'Batch must be >= 1')
     .max(100, 'Batch must be <= 100')
     .optional(),
+  translation_languages: z
+    .array(z.string())
+    .max(10, 'Maximum 10 translation languages allowed')
+    .optional(),
 }).refine(
   () => true,
   { message: 'Invalid request parameters' }
@@ -75,10 +79,12 @@ export default async function handler(
     const requestBody = req.body || {};
     const rawBatch = requestBody.batch || req.query.batch;
     const rawSeriesIds = requestBody.series_ids || req.query.series_ids;
+    const rawTranslationLanguages = requestBody.translation_languages;
 
     const validationResult = requestSchema.safeParse({
       series_ids: rawSeriesIds ? (Array.isArray(rawSeriesIds) ? rawSeriesIds : [rawSeriesIds]) : undefined,
       batch: rawBatch ? parseInt(String(rawBatch), 10) : undefined,
+      translation_languages: rawTranslationLanguages,
     });
 
     if (!validationResult.success) {
@@ -93,7 +99,8 @@ export default async function handler(
       return;
     }
 
-    const { series_ids: seriesIdsParam, batch: batchParam } = validationResult.data;
+    const { series_ids: seriesIdsParam, batch: batchParam, translation_languages: translationLanguagesParam } = validationResult.data;
+    const translationLanguages = translationLanguagesParam ?? TRANSLATION_LANGUAGES;
 
     let seriesIds: string[];
     if (seriesIdsParam && seriesIdsParam.length > 0) {
@@ -172,7 +179,7 @@ export default async function handler(
         logger.info(`Generation time estimate`, {
           sentences: sentenceCount,
           estimatedTimeMinutes: estimatedTotalTimeMinutes,
-          translationLanguages: [...TRANSLATION_LANGUAGES],
+          translationLanguages: [...translationLanguages],
         });
 
         // Timeout protection
@@ -189,7 +196,7 @@ export default async function handler(
 
         // Step 1: Generate English content + translations
         logger.info(`Generating content for ${series.name}...`);
-        const multiLangContent = await generateMultiLanguageContent(new Date(), series);
+        const multiLangContent = await generateMultiLanguageContent(new Date(), series, translationLanguages);
         logger.info('Content generated successfully', {
           seriesName: series.name,
           englishTitle: multiLangContent.en.title,

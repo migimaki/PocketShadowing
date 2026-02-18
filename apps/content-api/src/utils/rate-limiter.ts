@@ -3,8 +3,8 @@ import { Logger } from './logger';
 const logger = new Logger('RateLimiter');
 
 /**
- * Rate limiter for Gemini TTS API
- * Enforces the 10 requests per minute limit with configurable safety buffer
+ * Rate limiter for Gemini API calls
+ * Enforces requests per minute limit with configurable safety buffer
  */
 export class RateLimiter {
   private lastCallTime: number = 0;
@@ -13,7 +13,7 @@ export class RateLimiter {
 
   /**
    * Creates a rate limiter instance
-   * @param requestsPerMinute - Maximum requests allowed per minute (default: 10 for Gemini TTS)
+   * @param requestsPerMinute - Maximum requests allowed per minute (default: 10)
    * @param safetyBufferMs - Additional delay buffer for safety (default: 1000ms)
    */
   constructor(requestsPerMinute: number = 10, safetyBufferMs: number = 1000) {
@@ -39,7 +39,7 @@ export class RateLimiter {
 
     if (this.lastCallTime > 0 && timeSinceLastCall < this.minDelayMs) {
       const waitTime = this.minDelayMs - timeSinceLastCall;
-      logger.info('Rate limiting: waiting before next TTS call', {
+      logger.info('Rate limiting: waiting before next API call', {
         waitTimeMs: waitTime,
         waitTimeSec: (waitTime / 1000).toFixed(1),
         timeSinceLastCallMs: timeSinceLastCall

@@ -2,9 +2,18 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { SummarizedContent, MultiLanguageContent, Series } from '../types/index';
 import { TRANSLATION_LANGUAGES } from '../types/index';
 import { Logger } from '../utils/logger';
+import { RateLimiter } from '../utils/rate-limiter';
 import { retryWithBackoff } from '../utils/retry';
 
 const logger = new Logger('Gemini');
+
+// Rate limiter for Gemini content generation API calls
+// Free tier: 5 RPM → 60000/5 + 1000ms buffer = 13s between calls
+// Configurable via environment variables for different tiers
+const geminiRateLimiter = new RateLimiter(
+  parseInt(process.env.GEMINI_RATE_LIMIT_RPM || '5', 10),
+  parseInt(process.env.GEMINI_RATE_LIMIT_BUFFER_MS || '1000', 10)
+);
 
 /**
  * Language name mapping for translation prompts
@@ -89,6 +98,7 @@ ${additionalPrompt ? `ADDITIONAL INSTRUCTIONS:\n${additionalPrompt}\n` : ''}
 Please provide the content now, starting with a title on the first line, followed by the educational content with each sentence on a new line:`;
 
     logger.info('Sending request to Gemini AI...');
+    await geminiRateLimiter.waitIfNeeded();
 
     const result = await retryWithBackoff(
       () => model.generateContent(prompt),
@@ -188,6 +198,7 @@ ${content.lines.map((line, i) => `${i + 1}. ${line}`).join('\n')}
 Please provide the ${languageName} translation now, with the title on the first line, followed by each translated sentence on a new line:`;
 
     logger.info(`Sending translation request to Gemini AI for ${languageName}...`);
+    await geminiRateLimiter.waitIfNeeded();
 
     const result = await retryWithBackoff(
       () => model.generateContent(prompt),
@@ -286,5 +297,82 @@ export async function generateMultiLanguageContent(
   } catch (error) {
     logger.error('Error in content generation', error);
     throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Translates channel title and description to a target language
+ *
+ * @param title - English channel title
+ * @param description - English channel description
+ * @param targetLanguage - Language code (e.g., 'ja', 'fr', 'ko')
+ * @returns Translated title and description
+ */
+export async function translateChannelMetadata(
+  title: string,
+  description: string,
+  targetLanguage: string
+): Promise<{ title: string; description: string }> {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY environment variable is not set');
+    }
+
+    const languageName = LANGUAGE_NAMES[targetLanguage] || targetLanguage;
+
+    logger.info(`Translating channel metadata to ${languageName}...`, { title });
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const prompt = `You are a professional translator. Translate the following English channel metadata into ${languageName}.
+
+IMPORTANT REQUIREMENTS:
+1. Output exactly 2 lines: translated title on line 1, translated description on line 2
+2. Maintain natural, fluent ${languageName}
+3. Do NOT add any extra formatting, labels, or explanations
+
+Title: ${title}
+Description: ${description}
+
+Please provide the ${languageName} translation now (title on first line, description on second line):`;
+
+    await geminiRateLimiter.waitIfNeeded();
+
+    const result = await retryWithBackoff(
+      () => model.generateContent(prompt),
+      `Gemini channel translation to ${languageName}`,
+      2,
+      5000
+    );
+    const response = result.response;
+    const text = response.text();
+
+    if (!text) {
+      throw new Error('Gemini returned empty response for channel translation');
+    }
+
+    const lines = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    if (lines.length < 2) {
+      throw new Error(`Failed to parse ${languageName} channel translation: expected 2 lines, got ${lines.length}`);
+    }
+
+    const translatedTitle = lines[0];
+    const translatedDescription = lines[1];
+
+    logger.info(`Successfully translated channel metadata to ${languageName}`, {
+      translatedTitle,
+    });
+
+    return { title: translatedTitle, description: translatedDescription };
+
+  } catch (error) {
+    logger.error(`Error translating channel metadata to ${targetLanguage}`, error);
+    throw error;
   }
 }

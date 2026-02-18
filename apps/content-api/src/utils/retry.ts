@@ -65,7 +65,20 @@ export async function retryWithBackoff<T>(
       }
 
       // Calculate delay: 5s, 15s (baseDelay, baseDelay * 3)
-      const delay = attempt === 1 ? baseDelay : baseDelay * 3;
+      let delay = attempt === 1 ? baseDelay : baseDelay * 3;
+
+      // For 429/quota errors, parse the server's suggested retry delay
+      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('Quota exceeded')) {
+        const retrySecondsMatch = errorMessage.match(/retry\s+in\s+([\d.]+)s/i);
+        if (retrySecondsMatch) {
+          const serverDelay = Math.ceil(parseFloat(retrySecondsMatch[1]) * 1000) + 2000;
+          delay = Math.max(delay, serverDelay);
+        } else {
+          // Default for 429: wait at least 35s if no delay hint found
+          delay = Math.max(delay, 35000);
+        }
+      }
+
       logger.warn(`${operationName}: Attempt ${attempt}/${maxRetries + 1} failed: ${errorMessage}`);
       logger.info(`${operationName}: Retrying after ${delay / 1000}s...`);
 
