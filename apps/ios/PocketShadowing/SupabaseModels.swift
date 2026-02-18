@@ -13,7 +13,6 @@ import Foundation
 struct ChannelDTO: Codable {
     let id: UUID
     let title: String
-    let subtitle: String?
     let description: String
     let cover_image_url: String?
     let icon_name: String
@@ -21,7 +20,7 @@ struct ChannelDTO: Codable {
     let created_at: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, description, genre, created_at
+        case id, title, description, genre, created_at
         case cover_image_url
         case icon_name
     }
@@ -94,6 +93,20 @@ struct SentenceTranslationDTO: Codable {
     enum CodingKeys: String, CodingKey {
         case id, language, text
         case sentence_id
+    }
+}
+
+/// Channel translation data from Supabase
+struct ChannelTranslationDTO: Codable {
+    let id: UUID
+    let channel_id: UUID
+    let language: String
+    let title: String
+    let description: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, language, title, description
+        case channel_id
     }
 }
 

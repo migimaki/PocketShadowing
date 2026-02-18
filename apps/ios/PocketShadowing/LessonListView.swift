@@ -73,6 +73,7 @@ struct LessonListView: View {
         }
         .onChange(of: nativeLanguage) { _, _ in
             loadTranslatedTitles()
+            loadChannelTranslation()
         }
     }
 
@@ -111,7 +112,7 @@ struct LessonListView: View {
         ContentUnavailableView {
             Label("No Lessons", systemImage: "book.closed")
         } description: {
-            Text("Pull down to refresh to load lessons from \(channel.title)")
+            Text("Pull down to refresh to load lessons from \(channel.displayTitle)")
         } actions: {
             Button("Refresh") {
                 fetchLessonsFromSupabase()
@@ -240,6 +241,32 @@ struct LessonListView: View {
         }
     }
 
+    private func loadChannelTranslation() {
+        guard nativeLanguage != "en" else {
+            channel.translatedTitle = nil
+            channel.translatedDescription = nil
+            try? modelContext.save()
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                let repository = LessonRepository()
+                let translations = try await repository.fetchChannelTranslations(
+                    channelIds: [channel.id],
+                    targetLanguage: nativeLanguage
+                )
+                if let translation = translations[channel.id] {
+                    channel.translatedTitle = translation.title
+                    channel.translatedDescription = translation.description
+                }
+                try modelContext.save()
+            } catch {
+                print("[LessonListView] Failed to load channel translation: \(error)")
+            }
+        }
+    }
+
     private func deleteLessons(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
@@ -282,16 +309,17 @@ struct ChannelHeaderView: View {
             }
 
             // Channel title
-            Text(channel.title)
+            Text(channel.displayTitle)
                 .font(.title2)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
 
-            // Channel subtitle
-            Text(channel.subtitle)
+            // Channel description
+            Text(channel.displayDescription)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 0)

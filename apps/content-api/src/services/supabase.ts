@@ -8,6 +8,8 @@ import type {
   GenerationLogRecord,
   SeriesGenerationResult,
 } from "../types/index";
+import { TRANSLATION_LANGUAGES } from "../types/index";
+import { translateChannelMetadata } from "./gemini";
 import { estimateAudioDuration } from "./gemini-tts";
 import { Logger } from "../utils/logger";
 
@@ -61,7 +63,6 @@ export async function getOrCreateChannel(seriesId: string): Promise<string> {
       .from("channels")
       .insert([{
         title: series.name,
-        subtitle: series.concept.substring(0, 100),
         description: series.concept,
         icon_name: 'globe.europe.africa.fill',
         series_id: seriesId,
@@ -75,6 +76,19 @@ export async function getOrCreateChannel(seriesId: string): Promise<string> {
     }
 
     logger.info(`Created new channel: ${series.name}`, { id: newChannel.id });
+
+    // Generate and store channel translations
+    try {
+      await generateAndStoreChannelTranslations(
+        newChannel.id,
+        series.name,
+        series.concept
+      );
+    } catch (translationError) {
+      // Don't fail channel creation if translations fail
+      logger.warn(`Failed to generate channel translations for ${newChannel.id}`, translationError);
+    }
+
     return newChannel.id;
 
   } catch (error) {
@@ -490,6 +504,51 @@ export async function storeTranslations(
     logger.error("Error storing translations", error);
     throw error;
   }
+}
+
+/**
+ * Generates translations for channel title and description, then stores them
+ */
+async function generateAndStoreChannelTranslations(
+  channelId: string,
+  title: string,
+  description: string
+): Promise<void> {
+  const translations: { channel_id: string; language: string; title: string; description: string }[] = [];
+
+  for (const lang of TRANSLATION_LANGUAGES) {
+    try {
+      const translated = await translateChannelMetadata(title, description, lang);
+      translations.push({
+        channel_id: channelId,
+        language: lang,
+        title: translated.title,
+        description: translated.description,
+      });
+    } catch (error) {
+      logger.warn(`Skipping channel translation for ${lang}`, error);
+    }
+  }
+
+  if (translations.length === 0) {
+    logger.warn("No channel translations were generated");
+    return;
+  }
+
+  const supabase = getSupabaseClient();
+
+  const { error } = await supabase
+    .from("channel_translations")
+    .insert(translations);
+
+  if (error) {
+    throw new Error(`Failed to store channel translations: ${error.message}`);
+  }
+
+  logger.info("Channel translations stored", {
+    channelId,
+    languages: translations.map(t => t.language),
+  });
 }
 
 /**

@@ -95,11 +95,13 @@ struct ChannelListView: View {
                     Task {
                         await fetchChannelsFromSupabase()
                         await loadFollowStates()
+                        await loadChannelTranslations()
                         await loadLessonTranslations()
                     }
                 } else {
                     Task {
                         await loadFollowStates()
+                        await loadChannelTranslations()
                         await loadLessonTranslations()
                     }
                 }
@@ -118,9 +120,41 @@ struct ChannelListView: View {
             }
             .onChange(of: nativeLanguage) { _, _ in
                 Task {
+                    await loadChannelTranslations()
                     await loadLessonTranslations()
                 }
             }
+        }
+    }
+
+    private func loadChannelTranslations() async {
+        guard nativeLanguage != "en" else {
+            // Clear translations when language is English
+            for channel in channels {
+                channel.translatedTitle = nil
+                channel.translatedDescription = nil
+            }
+            try? modelContext.save()
+            return
+        }
+
+        let channelIds = channels.map { $0.id }
+        guard !channelIds.isEmpty else { return }
+
+        do {
+            let translations = try await repository.fetchChannelTranslations(
+                channelIds: channelIds,
+                targetLanguage: nativeLanguage
+            )
+            for channel in channels {
+                if let translation = translations[channel.id] {
+                    channel.translatedTitle = translation.title
+                    channel.translatedDescription = translation.description
+                }
+            }
+            try modelContext.save()
+        } catch {
+            print("Failed to load channel translations: \(error)")
         }
     }
 
@@ -261,7 +295,7 @@ struct MyChannelCard: View {
                     // Latest lesson info
                     VStack(alignment: .leading, spacing: 4) {
                         if let lesson = latestLesson {
-                            Text(channel.title)
+                            Text(channel.displayTitle)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
@@ -271,7 +305,7 @@ struct MyChannelCard: View {
                                 .lineLimit(2)
                                 .frame(maxWidth: .infinity, minHeight: 40, alignment: .topLeading)
                         } else {
-                            Text(channel.title)
+                            Text(channel.displayTitle)
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .lineLimit(2)
@@ -379,12 +413,12 @@ struct ChannelCard: View {
 
             // Title and description
             VStack(alignment: .leading, spacing: 4) {
-                Text(channel.title)
+                Text(channel.displayTitle)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .lineLimit(1)
 
-                Text(channel.channelDescription)
+                Text(channel.displayDescription)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

@@ -44,7 +44,6 @@ class LessonRepository {
                 let channel = Channel(
                     id: channelDTO.id,
                     title: channelDTO.title,
-                    subtitle: channelDTO.subtitle ?? "",
                     description: channelDTO.description,
                     coverImageURL: channelDTO.cover_image_url,
                     iconName: channelDTO.icon_name,
@@ -54,13 +53,33 @@ class LessonRepository {
                 modelContext.insert(channel)
             } else if let existingChannel = existingChannels.first {
                 existingChannel.title = channelDTO.title
-                existingChannel.subtitle = channelDTO.subtitle ?? existingChannel.subtitle
                 existingChannel.coverImageURL = channelDTO.cover_image_url
                 existingChannel.genre = channelDTO.genre ?? existingChannel.genre
             }
         }
 
         try modelContext.save()
+    }
+
+    // MARK: - Channel Translation Methods
+
+    /// Fetch channel translations for multiple channels in a target language
+    func fetchChannelTranslations(channelIds: [UUID], targetLanguage: String) async throws -> [UUID: (title: String, description: String?)] {
+        guard !channelIds.isEmpty else { return [:] }
+
+        let channelIdStrings = channelIds.map { $0.uuidString.lowercased() }
+
+        let translations: [ChannelTranslationDTO] = try await client.database
+            .from("channel_translations")
+            .select()
+            .in("channel_id", values: channelIdStrings)
+            .eq("language", value: targetLanguage)
+            .execute()
+            .value
+
+        return Dictionary(uniqueKeysWithValues: translations.map {
+            ($0.channel_id, (title: $0.title, description: $0.description))
+        })
     }
 
     // MARK: - Follow Methods

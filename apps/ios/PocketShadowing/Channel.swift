@@ -12,21 +12,29 @@ import SwiftData
 final class Channel {
     var id: UUID
     var title: String
-    var subtitle: String
     var channelDescription: String
     var coverImageURL: String?
     var iconName: String
     var genre: String
+    var translatedTitle: String?
+    var translatedDescription: String?
 
     @Transient var isFollowed: Bool = false
 
     @Relationship(deleteRule: .cascade)
     var lessons: [Lesson]
 
-    init(id: UUID = UUID(), title: String, subtitle: String = "", description: String, coverImageURL: String? = nil, iconName: String = "globe", genre: String = "Beginner") {
+    var displayTitle: String {
+        translatedTitle ?? title
+    }
+
+    var displayDescription: String {
+        translatedDescription ?? channelDescription
+    }
+
+    init(id: UUID = UUID(), title: String, description: String, coverImageURL: String? = nil, iconName: String = "globe", genre: String = "Beginner") {
         self.id = id
         self.title = title
-        self.subtitle = subtitle
         self.channelDescription = description
         self.coverImageURL = coverImageURL
         self.iconName = iconName
