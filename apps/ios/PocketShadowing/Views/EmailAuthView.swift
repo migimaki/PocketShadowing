@@ -11,9 +11,13 @@ struct EmailAuthView: View {
 
     @State private var email = ""
     @State private var password = ""
-    @State private var isSignUp = false
+    @State private var isSignUp: Bool
     @State private var isLoading = false
     @State private var errorMessage: String?
+
+    init(initialSignUp: Bool = false) {
+        self._isSignUp = State(initialValue: initialSignUp)
+    }
 
     var body: some View {
         NavigationStack {
@@ -62,13 +66,13 @@ struct EmailAuthView: View {
                     } label: {
                         if isLoading {
                             ProgressView()
-                                .tint(.white)
+                                .tint(Color.appForeground)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                         } else {
                             Text(isSignUp ? "Sign Up" : "Sign In")
                                 .font(.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.appForeground)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                         }
