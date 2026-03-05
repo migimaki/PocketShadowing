@@ -20,7 +20,7 @@ The app uses a **generated Swift file** to load credentials. You need to create 
 
 1. **Copy the example file:**
    ```bash
-   cd /Users/keisukeyanagisawa/Documents/Project/PocketShadowing/apps/ios/PocketShadowing
+   cd /Users/keisukeyanagisawa/Documents/Project/PocketShadowing/apps/ios/PocketShadowing/Core
    cp SupabaseConfig.generated.swift.example SupabaseConfig.generated.swift
    ```
 
@@ -51,7 +51,7 @@ The app uses a **generated Swift file** to load credentials. You need to create 
 2. **Add the file to Xcode:**
    - Right-click on the **"PocketShadowing" folder** (yellow folder in left sidebar)
    - Select **"Add Files to 'PocketShadowing'..."**
-   - Navigate to `apps/ios/PocketShadowing/`
+   - Navigate to `apps/ios/PocketShadowing/Core/`
    - Select **SupabaseConfig.generated.swift**
    - Make sure:
      - ☐ "Copy items if needed" is **UNCHECKED**
@@ -93,7 +93,7 @@ If you ever accidentally commit credentials to git:
 ## 📁 File Structure
 
 ```
-apps/ios/PocketShadowing/
+apps/ios/PocketShadowing/Core/
 ├── SupabaseConfig.swift                    # Main config (committed to git)
 ├── SupabaseConfig.generated.swift          # Your credentials (gitignored)
 └── SupabaseConfig.generated.swift.example  # Template file (committed to git)

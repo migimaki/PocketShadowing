@@ -27,7 +27,7 @@ New to the project? Start here:
 
 ## 📁 Configuration Files
 
-### In PocketShadowing/ directory:
+### In PocketShadowing/Core/ directory:
 - `SupabaseConfig.swift` - Main configuration interface (committed to git)
 - `SupabaseConfig.generated.swift` - Your actual credentials (gitignored, never commit!)
 - `SupabaseConfig.generated.swift.example` - Template for credentials file

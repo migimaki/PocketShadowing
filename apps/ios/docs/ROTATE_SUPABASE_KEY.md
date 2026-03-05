@@ -22,7 +22,7 @@ The anon key `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` is visible in your git hi
 4. **IMPORTANT:** Copy the new key immediately - you won't see it again!
 
 ### 3. Update Your Configuration
-1. Open `apps/ios/PocketShadowing/SupabaseConfig.generated.swift`
+1. Open `apps/ios/PocketShadowing/Core/SupabaseConfig.generated.swift`
 2. Replace the old key with the new one:
    ```swift
    let SUPABASE_ANON_KEY_VALUE = "<paste_new_key_here>"
@@ -84,7 +84,7 @@ npm run dev
 ## 📋 Checklist
 
 - [ ] Rotated Supabase anon key in dashboard
-- [ ] Updated `apps/ios/SupabaseConfig.generated.swift` with new key
+- [ ] Updated `apps/ios/PocketShadowing/Core/SupabaseConfig.generated.swift` with new key
 - [ ] Tested iOS app builds and connects successfully
 - [ ] Verified old key no longer works
 - [ ] Checked `.gitignore` includes `SupabaseConfig.generated.swift`

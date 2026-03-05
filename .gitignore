@@ -21,7 +21,7 @@
 # ============================================
 
 ## Configuration files with secrets (NEVER COMMIT)
-apps/ios/PocketShadowing/SupabaseConfig.generated.swift
+apps/ios/PocketShadowing/Core/SupabaseConfig.generated.swift
 
 ## User settings
 xcuserdata/
