@@ -13,4 +13,5 @@ struct SupabaseConfig {
     // That file is gitignored for security
     static let supabaseURL = SUPABASE_URL_VALUE
     static let supabaseAnonKey = SUPABASE_ANON_KEY_VALUE
+    static let googleClientID = GOOGLE_CLIENT_ID_VALUE
 }

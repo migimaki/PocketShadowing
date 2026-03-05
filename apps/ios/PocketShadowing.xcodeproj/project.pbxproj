@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		811ADA052F5A05AF00C38E06 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 811ADA042F5A05AF00C38E06 /* GoogleSignIn */; };
 		812053AC2EBF31DC00A53A11 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 812053AB2EBF31DC00A53A11 /* Auth */; };
 		812053AE2EBF31DC00A53A11 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 812053AD2EBF31DC00A53A11 /* Functions */; };
 		812053B02EBF31DC00A53A11 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 812053AF2EBF31DC00A53A11 /* PostgREST */; };
@@ -38,9 +39,22 @@
 		819760E02EB3A03300F5483F /* PocketShadowingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketShadowingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		811ADA072F5A05F800C38E06 /* Exceptions for "PocketShadowing" folder in "PocketShadowing" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 819760C62EB3A03100F5483F /* PocketShadowing */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		819760C92EB3A03100F5483F /* PocketShadowing */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				811ADA072F5A05F800C38E06 /* Exceptions for "PocketShadowing" folder in "PocketShadowing" target */,
+			);
 			path = PocketShadowing;
 			sourceTree = "<group>";
 		};
@@ -67,6 +81,7 @@
 				812053AC2EBF31DC00A53A11 /* Auth in Frameworks */,
 				812053B42EBF31DC00A53A11 /* Storage in Frameworks */,
 				812053B22EBF31DC00A53A11 /* Realtime in Frameworks */,
+				811ADA052F5A05AF00C38E06 /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +156,7 @@
 				812053B12EBF31DC00A53A11 /* Realtime */,
 				812053B32EBF31DC00A53A11 /* Storage */,
 				812053B62EBF31E700A53A11 /* Supabase */,
+				811ADA042F5A05AF00C38E06 /* GoogleSignIn */,
 			);
 			productName = WalkingTalking;
 			productReference = 819760C72EB3A03100F5483F /* PocketShadowing.app */;
@@ -226,6 +242,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				812053AA2EBF31DC00A53A11 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				811ADA032F5A05AF00C38E06 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 819760C82EB3A03100F5483F /* Products */;
@@ -432,6 +449,7 @@
 				DEVELOPMENT_TEAM = AFU8AWBV43;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PocketShadowing/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PocketShadowing;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "WalkingTalking needs microphone access to record your pronunciation practice and help you learn English.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "WalkingTalking uses speech recognition to show you what you said and help improve your pronunciation.";
@@ -468,6 +486,7 @@
 				DEVELOPMENT_TEAM = AFU8AWBV43;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PocketShadowing/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PocketShadowing;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "WalkingTalking needs microphone access to record your pronunciation practice and help you learn English.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "WalkingTalking uses speech recognition to show you what you said and help improve your pronunciation.";
@@ -620,6 +639,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		811ADA032F5A05AF00C38E06 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
 		812053AA2EBF31DC00A53A11 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -631,6 +658,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		811ADA042F5A05AF00C38E06 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 811ADA032F5A05AF00C38E06 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
 		812053AB2EBF31DC00A53A11 /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 812053AA2EBF31DC00A53A11 /* XCRemoteSwiftPackageReference "supabase-swift" */;

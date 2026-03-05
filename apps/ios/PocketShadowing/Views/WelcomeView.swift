@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct WelcomeView: View {
+    @Environment(AuthManager.self) private var authManager
     @State private var showEmailAuth = false
     @State private var showEmailAuthForSignUp = false
     @AppStorage("nativeLanguage") private var nativeLanguage: String = UserSettings.shared.nativeLanguage
@@ -40,7 +41,7 @@ struct WelcomeView: View {
                 VStack(spacing: 12) {
                     // Continue with Google
                     Button {
-                        // TODO: Implement Google Sign-In
+                        Task { await authManager.signInWithGoogle() }
                     } label: {
                         HStack(spacing: 10) {
                             Text("G")

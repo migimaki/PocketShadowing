@@ -5,6 +5,7 @@
 
 import Foundation
 import Supabase
+import GoogleSignIn
 
 @Observable
 @MainActor
@@ -53,6 +54,37 @@ class AuthManager {
             }
         } catch {
             print("Sign up error: \(error)")
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func signInWithGoogle() async {
+        errorMessage = nil
+        do {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootViewController = windowScene.windows.first?.rootViewController else {
+                errorMessage = "Unable to find root view controller"
+                return
+            }
+
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
+
+            guard let idToken = result.user.idToken?.tokenString else {
+                errorMessage = "Failed to get Google ID token"
+                return
+            }
+
+            try await client.auth.signInWithIdToken(
+                credentials: OpenIDConnectCredentials(
+                    provider: .google,
+                    idToken: idToken,
+                    accessToken: result.user.accessToken.tokenString
+                )
+            )
+            isAuthenticated = true
+            await checkProfile()
+        } catch {
+            print("Google sign in error: \(error)")
             errorMessage = error.localizedDescription
         }
     }

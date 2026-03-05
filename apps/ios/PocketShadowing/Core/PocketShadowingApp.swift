@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import GoogleSignIn
 
 @main
 struct PocketShadowingApp: App {
@@ -67,7 +68,11 @@ struct PocketShadowingApp: App {
             }
             .environment(authManager)
             .preferredColorScheme(.dark)  // Force dark mode colors for light text/icons
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
                 .onAppear {
+                    GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: SupabaseConfig.googleClientID)
                     // Make navigation bar transparent with light text
                     let appearance = UINavigationBarAppearance()
                     appearance.configureWithTransparentBackground()
