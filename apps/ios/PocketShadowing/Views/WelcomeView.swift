@@ -58,7 +58,7 @@ struct WelcomeView: View {
 
                     // Continue with Apple
                     Button {
-                        // TODO: Implement Apple Sign-In
+                        Task { await authManager.signInWithApple() }
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "apple.logo")

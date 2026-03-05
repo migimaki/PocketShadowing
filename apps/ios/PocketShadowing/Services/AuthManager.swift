@@ -6,6 +6,7 @@
 import Foundation
 import Supabase
 import GoogleSignIn
+import AuthenticationServices
 
 @Observable
 @MainActor
@@ -85,6 +86,34 @@ class AuthManager {
             await checkProfile()
         } catch {
             print("Google sign in error: \(error)")
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func signInWithApple() async {
+        errorMessage = nil
+        do {
+            let credential = try await AppleSignInCoordinator.signIn()
+
+            guard let identityTokenData = credential.identityToken,
+                  let idToken = String(data: identityTokenData, encoding: .utf8) else {
+                errorMessage = "Failed to get Apple ID token"
+                return
+            }
+
+            try await client.auth.signInWithIdToken(
+                credentials: OpenIDConnectCredentials(
+                    provider: .apple,
+                    idToken: idToken
+                )
+            )
+            isAuthenticated = true
+            await checkProfile()
+        } catch {
+            if (error as? ASAuthorizationError)?.code == .canceled {
+                return
+            }
+            print("Apple sign in error: \(error)")
             errorMessage = error.localizedDescription
         }
     }
