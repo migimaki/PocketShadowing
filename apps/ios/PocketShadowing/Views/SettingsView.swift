@@ -21,7 +21,7 @@ struct SettingsView: View {
                 // Content layer
                 Form {
                 Section {
-                    Picker("My native language", selection: $nativeLanguage) {
+                    Picker(L10n.myNativeLanguage, selection: $nativeLanguage) {
                         ForEach(UserSettings.availableLanguages) { language in
                             Text(language.displayName)
                                 .tag(language.code)
@@ -38,7 +38,7 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text("Sign Out")
+                            Text(L10n.signOut)
                             Spacer()
                         }
                     }
@@ -46,11 +46,11 @@ struct SettingsView: View {
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Settings")
+            .navigationTitle(L10n.settings)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button(L10n.done) {
                         dismiss()
                     }
                 }
