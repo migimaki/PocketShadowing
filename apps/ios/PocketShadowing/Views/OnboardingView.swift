@@ -7,26 +7,17 @@ import SwiftUI
 
 struct OnboardingView: View {
     @Environment(AuthManager.self) private var authManager
+    @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
     @State private var currentPage = 0
     @State private var isLoading = false
 
-    private let pages: [(icon: String, title: String, description: String)] = [
-        (
-            "waveform.and.mic",
-            "Listen & Shadow",
-            "Listen to native English speakers and practice speaking along with them. Your voice is recognized in real-time to help you improve."
-        ),
-        (
-            "chart.bar.fill",
-            "Track Your Progress",
-            "Get accuracy and speed scores for each practice session. Beat your best scores and watch your English improve over time."
-        ),
-        (
-            "globe",
-            "Learn Anywhere",
-            "Practice English shadowing anytime, anywhere. Choose from a variety of channels and lessons to match your interests."
-        )
-    ]
+    private var pages: [(icon: String, title: String, description: String)] {
+        [
+            ("waveform.and.mic", L10n.onboardingTitle1, L10n.onboardingDesc1),
+            ("chart.bar.fill", L10n.onboardingTitle2, L10n.onboardingDesc2),
+            ("globe", L10n.onboardingTitle3, L10n.onboardingDesc3)
+        ]
+    }
 
     var body: some View {
         ZStack {
@@ -59,7 +50,7 @@ struct OnboardingView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
                             } else {
-                                Text("Get Started")
+                                Text(L10n.getStarted)
                                     .font(.headline)
                                     .foregroundStyle(.white)
                                     .frame(maxWidth: .infinity)
@@ -75,7 +66,7 @@ struct OnboardingView: View {
                                 currentPage += 1
                             }
                         } label: {
-                            Text("Next")
+                            Text(L10n.next)
                                 .font(.headline)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)

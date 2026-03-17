@@ -46,7 +46,7 @@ struct WelcomeView: View {
                         HStack(spacing: 10) {
                             Text("G")
                                 .font(.system(size: 20, weight: .bold))
-                            Text("Continue with Google")
+                            Text(L10n.continueWithGoogle)
                         }
                         .font(.headline)
                         .foregroundStyle(.black)
@@ -62,7 +62,7 @@ struct WelcomeView: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "apple.logo")
-                            Text("Continue with Apple")
+                            Text(L10n.continueWithApple)
                         }
                         .font(.headline)
                         .foregroundStyle(.white)
@@ -82,7 +82,7 @@ struct WelcomeView: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "envelope.fill")
-                            Text("Sign in with Email")
+                            Text(L10n.signInWithEmail)
                         }
                         .font(.headline)
                         .foregroundStyle(Color.appForeground)
@@ -99,9 +99,9 @@ struct WelcomeView: View {
                     showEmailAuthForSignUp = true
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Don't have an account?")
+                        Text(L10n.dontHaveAccount)
                             .foregroundStyle(.white.opacity(0.7))
-                        Text("Sign Up")
+                        Text(L10n.signUp)
                             .foregroundStyle(Color.appPrimary)
                             .fontWeight(.semibold)
                     }

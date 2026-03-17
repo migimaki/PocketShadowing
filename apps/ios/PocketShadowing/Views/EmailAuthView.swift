@@ -12,6 +12,7 @@ struct EmailAuthView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var isSignUp: Bool
+    @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
     @State private var isLoading = false
     @State private var errorMessage: String?
 
@@ -26,13 +27,13 @@ struct EmailAuthView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 24) {
-                    Text(isSignUp ? "Create Account" : "Sign In")
+                    Text(isSignUp ? L10n.createAccount : L10n.signIn)
                         .font(.title.bold())
                         .foregroundStyle(.white)
                         .padding(.top, 20)
 
                     VStack(spacing: 16) {
-                        TextField("Email", text: $email)
+                        TextField(L10n.email, text: $email)
                             .textContentType(.emailAddress)
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
@@ -42,7 +43,7 @@ struct EmailAuthView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .foregroundStyle(.white)
 
-                        SecureField("Password", text: $password)
+                        SecureField(L10n.password, text: $password)
                             .textContentType(isSignUp ? .newPassword : .password)
                             .padding()
                             .background(Color.white.opacity(0.1))
@@ -70,7 +71,7 @@ struct EmailAuthView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                         } else {
-                            Text(isSignUp ? "Sign Up" : "Sign In")
+                            Text(isSignUp ? L10n.signUp : L10n.signIn)
                                 .font(.headline)
                                 .foregroundStyle(Color.appForeground)
                                 .frame(maxWidth: .infinity)
@@ -87,8 +88,8 @@ struct EmailAuthView: View {
                         errorMessage = nil
                     } label: {
                         Text(isSignUp
-                             ? "Already have an account? Sign In"
-                             : "Don't have an account? Sign Up")
+                             ? L10n.alreadyHaveAccount
+                             : L10n.dontHaveAccountSignUp)
                             .font(.subheadline)
                             .foregroundStyle(Color.appPrimary)
                     }
@@ -98,7 +99,7 @@ struct EmailAuthView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(L10n.cancel) {
                         dismiss()
                     }
                     .foregroundStyle(.white)

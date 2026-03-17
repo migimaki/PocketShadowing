@@ -17,15 +17,16 @@ struct ChannelListView: View {
     @State private var followOrder: [UUID] = [] // newest follow first
     @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
     @State private var hasLoadedInitialData = false
+    @State private var translationRefreshId = UUID()
 
     private let repository = LessonRepository()
 
-    // Computed property to get all channels (all English)
+    // Manual fetch + translationRefreshId trigger for re-render after translations load
     private var channels: [Channel] {
+        let _ = translationRefreshId
         let descriptor = FetchDescriptor<Channel>(
             sortBy: [SortDescriptor(\Channel.title)]
         )
-
         return (try? modelContext.fetch(descriptor)) ?? []
     }
 
@@ -55,20 +56,20 @@ struct ChannelListView: View {
                 // Content layer
                 VStack {
                     if isLoading {
-                        ProgressView("Loading channels...")
+                        ProgressView(L10n.loadingChannels)
                     } else if channels.isEmpty {
                         // Empty state
                         ContentUnavailableView {
-                            Label("No Channels", systemImage: "antenna.radiowaves.left.and.right.slash")
+                            Label(L10n.noChannels, systemImage: "antenna.radiowaves.left.and.right.slash")
                         } description: {
-                            Text("No English channels available.")
+                            Text(L10n.noChannelsAvailable)
                         }
                     } else {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 24) {
-                                ChannelSection(title: "My Channels", channels: myChannels, cardSize: 220, isMyChannels: true, emptyText: "No channels followed yet.")
-                                ChannelSection(title: "Beginner", channels: beginnerChannels, cardSize: 160)
-                                ChannelSection(title: "Intermediate", channels: intermediateChannels, cardSize: 160, emptyText: "Coming soon.")
+                                ChannelSection(title: L10n.myChannels, channels: myChannels, cardSize: 220, isMyChannels: true, emptyText: L10n.noChannelsFollowed)
+                                ChannelSection(title: L10n.beginner, channels: beginnerChannels, cardSize: 160)
+                                ChannelSection(title: L10n.intermediate, channels: intermediateChannels, cardSize: 160, emptyText: L10n.comingSoon)
                             }
                             .padding(.vertical)
                         }
@@ -82,14 +83,14 @@ struct ChannelListView: View {
                     }
                 }
             }
-            .navigationTitle("Channels")
+            .navigationTitle(L10n.channels)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showSettings = true
                     } label: {
-                        Label("Settings", systemImage: "gearshape")
+                        Label(L10n.settings, systemImage: "gearshape")
                     }
                 }
             }
@@ -104,8 +105,8 @@ struct ChannelListView: View {
                     await loadLessonTranslations()
                 }
             }
-            .alert("Error", isPresented: .constant(errorMessage != nil)) {
-                Button("OK") {
+            .alert(L10n.error, isPresented: .constant(errorMessage != nil)) {
+                Button(L10n.ok) {
                     errorMessage = nil
                 }
             } message: {
@@ -117,8 +118,12 @@ struct ChannelListView: View {
                 SettingsView()
             }
             .onChange(of: nativeLanguage) { _, _ in
+                // Run translation loads as independent tasks so one failing/cancelling
+                // doesn't prevent the other
                 Task {
                     await loadChannelTranslations()
+                }
+                Task {
                     await loadLessonTranslations()
                 }
             }
@@ -133,6 +138,7 @@ struct ChannelListView: View {
                 channel.translatedDescription = nil
             }
             try? modelContext.save()
+            translationRefreshId = UUID()
             return
         }
 
@@ -151,6 +157,7 @@ struct ChannelListView: View {
                 }
             }
             try modelContext.save()
+            translationRefreshId = UUID()
         } catch {
             print("Failed to load channel translations: \(error)")
         }

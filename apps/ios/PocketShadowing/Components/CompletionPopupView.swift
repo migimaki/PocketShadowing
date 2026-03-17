@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CompletionPopupView: View {
+    @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
     let accuracyScore: Double
     let speedScore: Double
     let bestAccuracyScore: Double
@@ -18,7 +19,7 @@ struct CompletionPopupView: View {
     var body: some View {
         VStack(spacing: 24) {
             // Title
-            Text("Lesson Complete!")
+            Text(L10n.lessonComplete)
                 .font(.title2)
                 .fontWeight(.bold)
 
@@ -28,7 +29,7 @@ struct CompletionPopupView: View {
                 VStack(spacing: 8) {
                     CircularGaugeView(
                         score: accuracyScore,
-                        title: "Accuracy",
+                        title: L10n.accuracy,
                         icon: "text.alignleft",
                         color: .blue
                     )
@@ -39,7 +40,7 @@ struct CompletionPopupView: View {
                             Image(systemName: "star.fill")
                                 .font(.caption2)
                                 .foregroundColor(.yellow)
-                            Text("Best: \(Int(bestAccuracyScore.rounded()))")
+                            Text(L10n.bestScore(Int(bestAccuracyScore.rounded())))
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
@@ -50,7 +51,7 @@ struct CompletionPopupView: View {
                 VStack(spacing: 8) {
                     CircularGaugeView(
                         score: speedScore,
-                        title: "Speed",
+                        title: L10n.speed,
                         icon: "timer",
                         color: .green
                     )
@@ -61,7 +62,7 @@ struct CompletionPopupView: View {
                             Image(systemName: "star.fill")
                                 .font(.caption2)
                                 .foregroundColor(.yellow)
-                            Text("Best: \(Int(bestSpeedScore.rounded()))")
+                            Text(L10n.bestScore(Int(bestSpeedScore.rounded())))
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
@@ -75,7 +76,7 @@ struct CompletionPopupView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "trophy.fill")
                         .foregroundColor(.yellow)
-                    Text("New Best Score!")
+                    Text(L10n.newBestScore)
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
@@ -92,7 +93,7 @@ struct CompletionPopupView: View {
                 Button(action: onTryAgain) {
                     HStack {
                         Image(systemName: "arrow.clockwise")
-                        Text("Try Again")
+                        Text(L10n.tryAgain)
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
@@ -104,7 +105,7 @@ struct CompletionPopupView: View {
 
                 // Close button
                 Button(action: onClose) {
-                    Text("Close")
+                    Text(L10n.close)
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()

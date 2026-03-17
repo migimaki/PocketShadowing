@@ -53,7 +53,7 @@ struct PlayerView: View {
                     )
                 } else {
                     Spacer()
-                    Text("No sentences available")
+                    Text(L10n.noSentencesAvailable)
                         .font(.title3)
                         .foregroundColor(.secondary)
                     Spacer()
@@ -187,8 +187,8 @@ struct PlayerView: View {
                 break
             }
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") {
+        .alert(L10n.error, isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button(L10n.ok) {
                 viewModel.errorMessage = nil
             }
         } message: {

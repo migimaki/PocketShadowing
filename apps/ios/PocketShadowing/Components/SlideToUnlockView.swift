@@ -3,6 +3,7 @@ import SwiftUI
 struct SlideToUnlockView: View {
     let onUnlock: () -> Void
 
+    @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
     @State private var sliderOffset: CGFloat = 0
     @State private var sliderWidth: CGFloat = 0
 
@@ -21,7 +22,7 @@ struct SlideToUnlockView: View {
                 // Text label
                 HStack {
                     Spacer()
-                    Text("Slide to unlock")
+                    Text(L10n.slideToUnlock)
                         .foregroundColor(.white)
                         .font(.system(size: 17, weight: .medium))
                     Spacer()

@@ -39,7 +39,7 @@ struct LessonListView: View {
             }
 
             if isLoading {
-                ProgressView("Loading lessons...")
+                ProgressView(L10n.loadingLessons)
                     .padding()
                     .background(Color.black.opacity(0.7))
                     .cornerRadius(10)
@@ -53,13 +53,13 @@ struct LessonListView: View {
                 Button {
                     toggleFollow()
                 } label: {
-                    Text(isFollowed ? "Following" : "Follow")
+                    Text(isFollowed ? L10n.following : L10n.follow)
                         .fontWeight(isFollowed ? .regular : .semibold)
                 }
             }
         }
-        .alert("Error", isPresented: $showError) {
-            Button("OK", role: .cancel) { }
+        .alert(L10n.error, isPresented: $showError) {
+            Button(L10n.ok, role: .cancel) { }
         } message: {
             Text(errorMessage ?? "Unknown error occurred")
         }
@@ -110,9 +110,9 @@ struct LessonListView: View {
                             if isLoading {
                                 ProgressView()
                                     .padding(.trailing, 8)
-                                Text("Loading...")
+                                Text(L10n.loading)
                             } else {
-                                Text("Load More")
+                                Text(L10n.loadMore)
                             }
                             Spacer()
                         }
@@ -134,11 +134,11 @@ struct LessonListView: View {
 
     private var emptyStateView: some View {
         ContentUnavailableView {
-            Label("No Lessons", systemImage: "book.closed")
+            Label(L10n.noLessons, systemImage: "book.closed")
         } description: {
-            Text("Pull down to refresh to load lessons from \(channel.displayTitle)")
+            Text(L10n.pullToRefresh(channelName: channel.displayTitle))
         } actions: {
-            Button("Refresh") {
+            Button(L10n.refresh) {
                 fetchLessonsFromSupabase()
             }
             .buttonStyle(.borderedProminent)
