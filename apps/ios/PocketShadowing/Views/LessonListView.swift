@@ -16,6 +16,7 @@ struct LessonListView: View {
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var isFollowed = false
+    @State private var hasLoadedAll = false
     @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
 
     // Query lessons for this specific channel
@@ -63,11 +64,10 @@ struct LessonListView: View {
             Text(errorMessage ?? "Unknown error occurred")
         }
         .onAppear {
-            // Auto-fetch if no lessons
+            // Only fetch from Supabase if no lessons cached yet
+            // (ChannelListView already fetches lessons + translations on refresh)
             if lessons.isEmpty {
                 fetchLessonsFromSupabase()
-            } else {
-                loadTranslatedTitles()
             }
             loadFollowState()
         }
@@ -99,6 +99,30 @@ struct LessonListView: View {
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                 }
                 .onDelete(perform: deleteLessons)
+
+                // Load More button when only initial lessons are cached
+                if !hasLoadedAll {
+                    Button {
+                        loadAllLessons()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if isLoading {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                                Text("Loading...")
+                            } else {
+                                Text("Load More")
+                            }
+                            Spacer()
+                        }
+                        .foregroundStyle(.blue)
+                        .padding(.vertical, 8)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .disabled(isLoading)
+                }
             }
         }
         .listStyle(.plain)
@@ -159,6 +183,12 @@ struct LessonListView: View {
         }
     }
 
+    private func loadAllLessons() {
+        Task {
+            await fetchLessonsAsync()
+        }
+    }
+
     private func fetchLessonsAsync() async {
         isLoading = true
         errorMessage = nil
@@ -166,28 +196,26 @@ struct LessonListView: View {
         do {
             let repository = LessonRepository()
 
-            // Fetch lessons for this specific channel
+            // Fetch all lessons for this channel
             let lessonDTOs = try await repository.fetchLessons(for: channel.id)
 
-            // Fetch sentences for each lesson
+            // Batch fetch sentences for all lessons (single query)
+            let lessonIds = lessonDTOs.map { $0.id }
+            let allSentences = try await repository.fetchSentences(forLessonIds: lessonIds)
+
+            // Group sentences by lesson_id client-side
             var sentencesDict: [UUID: [SentenceDTO]] = [:]
-            for lessonDTO in lessonDTOs {
-                let sentences = try await repository.fetchSentences(for: lessonDTO.id)
-                sentencesDict[lessonDTO.id] = sentences
+            for sentence in allSentences {
+                sentencesDict[sentence.lesson_id, default: []].append(sentence)
             }
 
             // Fetch lesson title translations if native language is not English
-            print("[LessonListView] fetchLessonsAsync: nativeLanguage = '\(nativeLanguage)'")
             var translations: [UUID: String] = [:]
             if nativeLanguage != "en" {
-                let lessonIds = lessonDTOs.map { $0.id }
                 translations = try await repository.fetchLessonTranslations(
                     lessonIds: lessonIds,
                     targetLanguage: nativeLanguage
                 )
-                print("[LessonListView] fetchLessonsAsync: fetched \(translations.count) translations")
-            } else {
-                print("[LessonListView] fetchLessonsAsync: skipping translations (language is English)")
             }
 
             // Save to SwiftData
@@ -199,12 +227,12 @@ struct LessonListView: View {
                 translations: translations
             )
 
-            print("✅ Successfully fetched \(lessonDTOs.count) lessons for channel '\(channel.title)' from Supabase")
+            hasLoadedAll = true
 
         } catch {
             errorMessage = "Failed to fetch lessons: \(error.localizedDescription)"
             showError = true
-            print("❌ Error fetching lessons: \(error)")
+            print("Failed to fetch lessons: \(error)")
         }
 
         isLoading = false

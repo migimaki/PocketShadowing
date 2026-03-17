@@ -137,6 +137,39 @@ class LessonRepository {
         return response
     }
 
+    /// Fetch latest lessons from Supabase with a per-channel limit
+    func fetchLatestLessons(perChannelLimit: Int) async throws -> [LessonDTO] {
+        // Fetch all lessons ordered by date, then limit per channel client-side
+        let allLessons = try await fetchAllLessons()
+
+        var countByChannel: [UUID: Int] = [:]
+        var result: [LessonDTO] = []
+        for lesson in allLessons {
+            let count = countByChannel[lesson.channel_id, default: 0]
+            if count < perChannelLimit {
+                result.append(lesson)
+                countByChannel[lesson.channel_id] = count + 1
+            }
+        }
+        return result
+    }
+
+    /// Fetch sentences for multiple lesson IDs in a single query
+    func fetchSentences(forLessonIds lessonIds: [UUID]) async throws -> [SentenceDTO] {
+        guard !lessonIds.isEmpty else { return [] }
+
+        let idStrings = lessonIds.map { $0.uuidString.lowercased() }
+        let response: [SentenceDTO] = try await client.database
+            .from("sentences")
+            .select()
+            .in("lesson_id", values: idStrings)
+            .order("order_index", ascending: true)
+            .execute()
+            .value
+
+        return response
+    }
+
     /// Fetch lessons for a specific channel
     func fetchLessons(for channelId: UUID) async throws -> [LessonDTO] {
         let response: [LessonDTO] = try await client.database
@@ -181,6 +214,18 @@ class LessonRepository {
         }
 
         return lesson
+    }
+
+    /// Fetch all sentences from Supabase
+    func fetchAllSentences() async throws -> [SentenceDTO] {
+        let response: [SentenceDTO] = try await client.database
+            .from("sentences")
+            .select()
+            .order("order_index", ascending: true)
+            .execute()
+            .value
+
+        return response
     }
 
     /// Fetch all sentences for a specific lesson
@@ -303,6 +348,59 @@ class LessonRepository {
             } else if let existingLesson = existingLessons.first {
                 existingLesson.translatedTitle = translations[lessonDTO.id]
                 print("[LessonRepo] Existing lesson '\(existingLesson.title)' translatedTitle: \(existingLesson.translatedTitle ?? "nil")")
+            }
+        }
+
+        try modelContext.save()
+    }
+
+    /// Batch save all lessons and sentences to SwiftData, assigning each lesson to its channel
+    func saveAllLessonsToSwiftData(
+        _ lessonDTOs: [LessonDTO],
+        sentences: [UUID: [SentenceDTO]],
+        modelContext: ModelContext,
+        channelMap: [UUID: Channel],
+        translations: [UUID: String] = [:]
+    ) throws {
+        for lessonDTO in lessonDTOs {
+            guard let channel = channelMap[lessonDTO.channel_id] else { continue }
+
+            let descriptor = FetchDescriptor<Lesson>(
+                predicate: #Predicate { $0.id == lessonDTO.id }
+            )
+
+            let existingLessons = try modelContext.fetch(descriptor)
+
+            if existingLessons.isEmpty {
+                let lesson = Lesson(
+                    id: lessonDTO.id,
+                    title: lessonDTO.title,
+                    description: "",
+                    date: lessonDTO.parsedDate,
+                    sourceURL: lessonDTO.source_url,
+                    audioURL: lessonDTO.audio_url
+                )
+                lesson.translatedTitle = translations[lessonDTO.id]
+                lesson.channel = channel
+
+                if let sentenceDTOs = sentences[lessonDTO.id] {
+                    for sentenceDTO in sentenceDTOs {
+                        let sentence = Sentence(
+                            id: sentenceDTO.id,
+                            text: sentenceDTO.text,
+                            order: sentenceDTO.order_index,
+                            estimatedDuration: sentenceDTO.durationInSeconds,
+                            audioURL: sentenceDTO.audio_url,
+                            startTime: sentenceDTO.startTimeInSeconds,
+                            endTime: sentenceDTO.endTimeInSeconds
+                        )
+                        lesson.sentences.append(sentence)
+                    }
+                }
+
+                modelContext.insert(lesson)
+            } else if let existingLesson = existingLessons.first {
+                existingLesson.translatedTitle = translations[lessonDTO.id]
             }
         }
 

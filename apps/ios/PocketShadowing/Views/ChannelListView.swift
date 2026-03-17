@@ -16,6 +16,7 @@ struct ChannelListView: View {
     @State private var followedChannelIds: Set<UUID> = []
     @State private var followOrder: [UUID] = [] // newest follow first
     @AppStorage("nativeLanguage") private var nativeLanguage: String = "en"
+    @State private var hasLoadedInitialData = false
 
     private let repository = LessonRepository()
 
@@ -74,6 +75,9 @@ struct ChannelListView: View {
                         .refreshable {
                             await fetchChannelsFromSupabase()
                             await loadFollowStates()
+                            await fetchAllLessonsForChannels()
+                            await loadChannelTranslations()
+                            await loadLessonTranslations()
                         }
                     }
                 }
@@ -90,20 +94,14 @@ struct ChannelListView: View {
                 }
             }
             .onAppear {
-                // Fetch channels from Supabase if needed
-                if channels.isEmpty {
-                    Task {
-                        await fetchChannelsFromSupabase()
-                        await loadFollowStates()
-                        await loadChannelTranslations()
-                        await loadLessonTranslations()
-                    }
-                } else {
-                    Task {
-                        await loadFollowStates()
-                        await loadChannelTranslations()
-                        await loadLessonTranslations()
-                    }
+                guard !hasLoadedInitialData else { return }
+                hasLoadedInitialData = true
+                Task {
+                    await fetchChannelsFromSupabase()
+                    await loadFollowStates()
+                    await fetchAllLessonsForChannels()
+                    await loadChannelTranslations()
+                    await loadLessonTranslations()
                 }
             }
             .alert("Error", isPresented: .constant(errorMessage != nil)) {
@@ -204,7 +202,7 @@ struct ChannelListView: View {
     }
 
     private func fetchChannelsFromSupabase() async {
-        isLoading = true
+        isLoading = channels.isEmpty
         errorMessage = nil
 
         do {
@@ -221,6 +219,44 @@ struct ChannelListView: View {
         }
 
         isLoading = false
+    }
+
+    private func fetchAllLessonsForChannels() async {
+        do {
+            // Fetch only latest 10 lessons per channel + their sentences (3 batch queries)
+            let lessonDTOs = try await repository.fetchLatestLessons(perChannelLimit: 10)
+            let lessonIds = lessonDTOs.map { $0.id }
+            let allSentences = try await repository.fetchSentences(forLessonIds: lessonIds)
+
+            // Group sentences by lesson_id client-side
+            var sentencesDict: [UUID: [SentenceDTO]] = [:]
+            for sentence in allSentences {
+                sentencesDict[sentence.lesson_id, default: []].append(sentence)
+            }
+
+            // Fetch translations if needed
+            var translations: [UUID: String] = [:]
+            if nativeLanguage != "en" {
+                translations = try await repository.fetchLessonTranslations(
+                    lessonIds: lessonIds,
+                    targetLanguage: nativeLanguage
+                )
+            }
+
+            // Build channel lookup map from local SwiftData channels
+            let channelMap = Dictionary(uniqueKeysWithValues: channels.map { ($0.id, $0) })
+
+            // Batch save all lessons
+            try repository.saveAllLessonsToSwiftData(
+                lessonDTOs,
+                sentences: sentencesDict,
+                modelContext: modelContext,
+                channelMap: channelMap,
+                translations: translations
+            )
+        } catch {
+            print("Failed to fetch lessons: \(error)")
+        }
     }
 }
 
