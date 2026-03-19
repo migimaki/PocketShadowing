@@ -470,6 +470,118 @@ enum L10n {
         "es": "Cerrar sesión"
     ])}
 
+    // MARK: - Subscription
+
+    static var subscription: String { tr([
+        "en": "Subscription",
+        "ja": "サブスクリプション",
+        "fr": "Abonnement",
+        "zh-Hans": "订阅",
+        "zh-Hant": "訂閱",
+        "ko": "구독",
+        "es": "Suscripción"
+    ])}
+
+    static var active: String { tr([
+        "en": "Active",
+        "ja": "有効",
+        "fr": "Actif",
+        "zh-Hans": "已激活",
+        "zh-Hant": "已啟用",
+        "ko": "활성",
+        "es": "Activo"
+    ])}
+
+    static var premium: String { tr([
+        "en": "Premium",
+        "ja": "プレミアム",
+        "fr": "Premium",
+        "zh-Hans": "高级版",
+        "zh-Hant": "進階版",
+        "ko": "프리미엄",
+        "es": "Premium"
+    ])}
+
+    static var subscribeButton: String { tr([
+        "en": "Subscribe",
+        "ja": "登録する",
+        "fr": "S'abonner",
+        "zh-Hans": "订阅",
+        "zh-Hant": "訂閱",
+        "ko": "구독하기",
+        "es": "Suscribirse"
+    ])}
+
+    static var restorePurchases: String { tr([
+        "en": "Restore Purchases",
+        "ja": "購入を復元",
+        "fr": "Restaurer les achats",
+        "zh-Hans": "恢复购买",
+        "zh-Hant": "恢復購買",
+        "ko": "구매 복원",
+        "es": "Restaurar compras"
+    ])}
+
+    static var alreadySubscribed: String { tr([
+        "en": "You are a Premium member",
+        "ja": "プレミアムメンバーです",
+        "fr": "Vous êtes membre Premium",
+        "zh-Hans": "您是高级会员",
+        "zh-Hant": "您是進階會員",
+        "ko": "프리미엄 회원입니다",
+        "es": "Eres miembro Premium"
+    ])}
+
+    static var subscriptionFeature1: String { tr([
+        "en": "Unlock all lessons",
+        "ja": "すべてのレッスンをアンロック",
+        "fr": "Débloquer toutes les leçons",
+        "zh-Hans": "解锁所有课程",
+        "zh-Hant": "解鎖所有課程",
+        "ko": "모든 레슨 잠금 해제",
+        "es": "Desbloquea todas las lecciones"
+    ])}
+
+    static var subscriptionFeature2: String { tr([
+        "en": "Access all channels",
+        "ja": "すべてのチャンネルにアクセス",
+        "fr": "Accéder à toutes les chaînes",
+        "zh-Hans": "访问所有频道",
+        "zh-Hant": "存取所有頻道",
+        "ko": "모든 채널 이용",
+        "es": "Accede a todos los canales"
+    ])}
+
+    static var subscriptionFeature3: String { tr([
+        "en": "New content every week",
+        "ja": "毎週新しいコンテンツ",
+        "fr": "Nouveau contenu chaque semaine",
+        "zh-Hans": "每周更新内容",
+        "zh-Hant": "每週更新內容",
+        "ko": "매주 새로운 콘텐츠",
+        "es": "Contenido nuevo cada semana"
+    ])}
+
+    static var purchaseFailed: String { tr([
+        "en": "Purchase failed. Please try again.",
+        "ja": "購入に失敗しました。もう一度お試しください。",
+        "fr": "L'achat a échoué. Veuillez réessayer.",
+        "zh-Hans": "购买失败，请重试。",
+        "zh-Hant": "購買失敗，請重試。",
+        "ko": "구매에 실패했습니다. 다시 시도해 주세요.",
+        "es": "La compra ha fallado. Inténtalo de nuevo."
+    ])}
+
+    static var perMonth: String { tr([
+        "en": "/ month",
+        "ja": "/ 月",
+        "fr": "/ mois",
+        "zh-Hans": "/ 月",
+        "zh-Hant": "/ 月",
+        "ko": "/ 월",
+        "es": "/ mes"
+    ])}
+
     // MARK: - Player
 
     static var noSentencesAvailable: String { tr([

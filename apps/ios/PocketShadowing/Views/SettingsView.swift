@@ -30,6 +30,22 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        SubscriptionView()
+                    } label: {
+                        HStack {
+                            Label(L10n.subscription, systemImage: "crown.fill")
+                            Spacer()
+                            if authManager.isMember {
+                                Text(L10n.active)
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            }
+                        }
+                    }
+                }
+
+                Section {
                     Button(role: .destructive) {
                         Task {
                             await authManager.signOut()

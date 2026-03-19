@@ -12,6 +12,7 @@ import GoogleSignIn
 @main
 struct PocketShadowingApp: App {
     @State private var authManager = AuthManager()
+    @State private var subscriptionManager = SubscriptionManager()
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -67,7 +68,11 @@ struct PocketShadowingApp: App {
                 }
             }
             .environment(authManager)
+            .environment(subscriptionManager)
             .preferredColorScheme(.dark)  // Force dark mode colors for light text/icons
+                .onChange(of: subscriptionManager.isSubscribed) { _, newValue in
+                    authManager.isMember = newValue
+                }
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
                 }

@@ -14,6 +14,7 @@
 		812053B22EBF31DC00A53A11 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 812053B12EBF31DC00A53A11 /* Realtime */; };
 		812053B42EBF31DC00A53A11 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 812053B32EBF31DC00A53A11 /* Storage */; };
 		812053B72EBF31E700A53A11 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 812053B62EBF31E700A53A11 /* Supabase */; };
+		81AD18A92F6C9F3500457C9E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81AD18A82F6C9F3500457C9E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +38,7 @@
 		819760C72EB3A03100F5483F /* PocketShadowing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PocketShadowing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		819760D62EB3A03300F5483F /* PocketShadowingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketShadowingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		819760E02EB3A03300F5483F /* PocketShadowingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PocketShadowingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		81AD18A82F6C9F3500457C9E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -78,6 +80,7 @@
 				812053B02EBF31DC00A53A11 /* PostgREST in Frameworks */,
 				812053AE2EBF31DC00A53A11 /* Functions in Frameworks */,
 				812053B72EBF31E700A53A11 /* Supabase in Frameworks */,
+				81AD18A92F6C9F3500457C9E /* StoreKit.framework in Frameworks */,
 				812053AC2EBF31DC00A53A11 /* Auth in Frameworks */,
 				812053B42EBF31DC00A53A11 /* Storage in Frameworks */,
 				812053B22EBF31DC00A53A11 /* Realtime in Frameworks */,
@@ -105,6 +108,7 @@
 		812053B52EBF31E700A53A11 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				81AD18A82F6C9F3500457C9E /* StoreKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";

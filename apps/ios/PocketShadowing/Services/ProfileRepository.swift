@@ -59,6 +59,17 @@ class ProfileRepository {
         return response.first
     }
 
+    /// Update the current user's membership status
+    func updateMembershipStatus(isMember: Bool) async throws {
+        guard let userId = client.auth.currentUser?.id else { return }
+
+        try await client.database
+            .from("profiles")
+            .update(["is_member": isMember])
+            .eq("id", value: userId.uuidString)
+            .execute()
+    }
+
     /// Create or update the current user's profile
     func upsertProfile(nativeLanguage: String, onboardingCompleted: Bool) async throws {
         guard let userId = client.auth.currentUser?.id else { return }
