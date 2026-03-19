@@ -13,6 +13,7 @@ import AuthenticationServices
 class AuthManager {
     var isAuthenticated = false
     var hasCompletedOnboarding = false
+    var isMember = false
     var isLoading = true
     var errorMessage: String?
 
@@ -123,6 +124,7 @@ class AuthManager {
             try await client.auth.signOut()
             isAuthenticated = false
             hasCompletedOnboarding = false
+            isMember = false
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -132,15 +134,23 @@ class AuthManager {
         hasCompletedOnboarding = true
     }
 
+    /// Returns true if the given lesson is accessible to the current user.
+    /// Free lessons are always accessible. Non-free lessons require membership.
+    func isAccessible(_ lesson: Lesson) -> Bool {
+        lesson.isFree || isMember
+    }
+
     private func checkProfile() async {
         do {
             if let profile = try await profileRepository.fetchProfile() {
                 hasCompletedOnboarding = profile.onboarding_completed
+                isMember = profile.is_member
                 if profile.onboarding_completed {
                     UserSettings.shared.nativeLanguage = profile.native_language
                 }
             } else {
                 hasCompletedOnboarding = false
+                isMember = false
             }
         } catch {
             print("Failed to fetch profile: \(error)")

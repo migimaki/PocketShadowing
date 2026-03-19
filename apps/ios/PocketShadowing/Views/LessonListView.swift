@@ -10,6 +10,7 @@ import SwiftData
 
 struct LessonListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(AuthManager.self) private var authManager
     let channel: Channel
 
     @State private var isLoading = false
@@ -21,7 +22,12 @@ struct LessonListView: View {
 
     // Query lessons for this specific channel
     private var lessons: [Lesson] {
-        channel.lessons.sorted { $0.date > $1.date }
+        channel.lessons.sorted { a, b in
+            if a.isFree != b.isFree {
+                return a.isFree // free lessons first
+            }
+            return a.date > b.date
+        }
     }
 
     var body: some View {
@@ -49,12 +55,14 @@ struct LessonListView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    toggleFollow()
-                } label: {
-                    Text(isFollowed ? L10n.following : L10n.follow)
-                        .fontWeight(isFollowed ? .regular : .semibold)
+            if authManager.isMember {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        toggleFollow()
+                    } label: {
+                        Text(isFollowed ? L10n.following : L10n.follow)
+                            .fontWeight(isFollowed ? .regular : .semibold)
+                    }
                 }
             }
         }
@@ -90,13 +98,19 @@ struct LessonListView: View {
             // Lessons section
             Section {
                 ForEach(lessons) { lesson in
-                    NavigationLink {
-                        PlayerView(lesson: lesson)
-                    } label: {
-                        LessonRowView(lesson: lesson)
+                    if authManager.isAccessible(lesson) {
+                        NavigationLink {
+                            PlayerView(lesson: lesson)
+                        } label: {
+                            LessonRowView(lesson: lesson)
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    } else {
+                        LessonRowView(lesson: lesson, isLocked: true)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                 }
                 .onDelete(perform: deleteLessons)
 
@@ -368,23 +382,48 @@ struct ChannelHeaderView: View {
 
 struct LessonRowView: View {
     let lesson: Lesson
+    var isLocked: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Title
-            Text(lesson.displayTitle)
-                .font(.headline)
-                .lineLimit(2)
+        HStack {
+            VStack(alignment: .leading, spacing: 6) {
+                // Title + Free badge
+                HStack(spacing: 6) {
+                    Text(lesson.displayTitle)
+                        .font(.headline)
+                        .lineLimit(2)
 
-            // Date only
-            HStack {
-                Image(systemName: "calendar")
-                Text(lesson.formattedDate)
+                    if lesson.isFree {
+                        Text(L10n.free)
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.green)
+                            .clipShape(Capsule())
+                    }
+                }
+
+                // Date only
+                HStack {
+                    Image(systemName: "calendar")
+                    Text(lesson.formattedDate)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .padding(.vertical, 2)
+
+            Spacer()
+
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.secondary)
+                    .font(.body)
+            }
         }
-        .padding(.vertical, 2)
+        .opacity(isLocked ? 0.5 : 1.0)
     }
 }
 

@@ -11,6 +11,7 @@ struct ProfileDTO: Codable {
     let id: UUID
     let native_language: String
     let onboarding_completed: Bool
+    let is_member: Bool
     let created_at: String?
     let updated_at: String?
 
@@ -18,6 +19,7 @@ struct ProfileDTO: Codable {
         case id, created_at, updated_at
         case native_language
         case onboarding_completed
+        case is_member
     }
 }
 

@@ -323,7 +323,8 @@ class LessonRepository {
                     description: "",
                     date: lessonDTO.parsedDate,
                     sourceURL: lessonDTO.source_url,
-                    audioURL: lessonDTO.audio_url
+                    audioURL: lessonDTO.audio_url,
+                    isFree: lessonDTO.is_free
                 )
                 lesson.translatedTitle = translations[lessonDTO.id]
                 print("[LessonRepo] New lesson '\(lessonDTO.title)' translatedTitle: \(lesson.translatedTitle ?? "nil")")
@@ -347,6 +348,7 @@ class LessonRepository {
                 modelContext.insert(lesson)
             } else if let existingLesson = existingLessons.first {
                 existingLesson.translatedTitle = translations[lessonDTO.id]
+                existingLesson.isFree = lessonDTO.is_free
                 print("[LessonRepo] Existing lesson '\(existingLesson.title)' translatedTitle: \(existingLesson.translatedTitle ?? "nil")")
             }
         }
@@ -378,7 +380,8 @@ class LessonRepository {
                     description: "",
                     date: lessonDTO.parsedDate,
                     sourceURL: lessonDTO.source_url,
-                    audioURL: lessonDTO.audio_url
+                    audioURL: lessonDTO.audio_url,
+                    isFree: lessonDTO.is_free
                 )
                 lesson.translatedTitle = translations[lessonDTO.id]
                 lesson.channel = channel
@@ -401,6 +404,7 @@ class LessonRepository {
                 modelContext.insert(lesson)
             } else if let existingLesson = existingLessons.first {
                 existingLesson.translatedTitle = translations[lessonDTO.id]
+                existingLesson.isFree = lessonDTO.is_free
             }
         }
 

@@ -10,6 +10,7 @@ import SwiftData
 
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(AuthManager.self) private var authManager
     @State private var showSettings = false
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -67,7 +68,9 @@ struct ChannelListView: View {
                     } else {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 24) {
-                                ChannelSection(title: L10n.myChannels, channels: myChannels, cardSize: 220, isMyChannels: true, emptyText: L10n.noChannelsFollowed)
+                                if authManager.isMember {
+                                    ChannelSection(title: L10n.myChannels, channels: myChannels, cardSize: 220, isMyChannels: true, emptyText: L10n.noChannelsFollowed)
+                                }
                                 ChannelSection(title: L10n.beginner, channels: beginnerChannels, cardSize: 160)
                                 ChannelSection(title: L10n.intermediate, channels: intermediateChannels, cardSize: 160, emptyText: L10n.comingSoon)
                             }
@@ -318,6 +321,7 @@ struct ChannelSection: View {
 // MARK: - My Channel Card
 
 struct MyChannelCard: View {
+    @Environment(AuthManager.self) private var authManager
     let channel: Channel
     var cardSize: CGFloat = 220
 
@@ -342,11 +346,23 @@ struct MyChannelCard: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
-                            Text(lesson.displayTitle)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .lineLimit(2)
-                                .frame(maxWidth: .infinity, minHeight: 40, alignment: .topLeading)
+                            HStack(spacing: 4) {
+                                Text(lesson.displayTitle)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .lineLimit(2)
+                                if lesson.isFree {
+                                    Text(L10n.free)
+                                        .font(.caption2)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 1)
+                                        .background(Color.green)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 40, alignment: .topLeading)
                         } else {
                             Text(channel.displayTitle)
                                 .font(.subheadline)
@@ -363,14 +379,20 @@ struct MyChannelCard: View {
                     // Play button row
                     if let lesson = latestLesson {
                         HStack {
-                            NavigationLink {
-                                PlayerView(lesson: lesson)
-                            } label: {
-                                Image(systemName: "play.circle.fill")
+                            if authManager.isAccessible(lesson) {
+                                NavigationLink {
+                                    PlayerView(lesson: lesson)
+                                } label: {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title)
+                                        .foregroundStyle(.white)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Image(systemName: "lock.circle.fill")
                                     .font(.title)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.gray)
                             }
-                            .buttonStyle(.plain)
 
                             Spacer()
                         }

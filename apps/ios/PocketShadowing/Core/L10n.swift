@@ -408,6 +408,16 @@ enum L10n {
         "es": "Cargando lecciones..."
     ])}
 
+    static var free: String { tr([
+        "en": "FREE",
+        "ja": "無料",
+        "fr": "GRATUIT",
+        "zh-Hans": "免费",
+        "zh-Hant": "免費",
+        "ko": "무료",
+        "es": "GRATIS"
+    ])}
+
     static var loadMore: String { tr([
         "en": "Load More",
         "ja": "もっと見る",

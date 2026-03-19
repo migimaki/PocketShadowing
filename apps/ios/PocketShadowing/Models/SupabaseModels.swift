@@ -34,6 +34,7 @@ struct LessonDTO: Codable {
     let date: String // "YYYY-MM-DD" format
     let channel_id: UUID
     let audio_url: String?
+    let is_free: Bool
     let created_at: String?
 
     enum CodingKeys: String, CodingKey {
@@ -41,6 +42,7 @@ struct LessonDTO: Codable {
         case source_url
         case channel_id
         case audio_url
+        case is_free
     }
 
     var parsedDate: Date {

@@ -17,6 +17,7 @@ final class Lesson {
     var sourceURL: String
     var createdDate: Date
     var audioURL: String?
+    var isFree: Bool
     var translatedTitle: String?
 
     @Relationship(deleteRule: .cascade)
@@ -28,7 +29,7 @@ final class Lesson {
     @Relationship(inverse: \Channel.lessons)
     var channel: Channel?
 
-    init(id: UUID = UUID(), title: String, description: String, date: Date = Date(), sourceURL: String = "", audioURL: String? = nil) {
+    init(id: UUID = UUID(), title: String, description: String, date: Date = Date(), sourceURL: String = "", audioURL: String? = nil, isFree: Bool = false) {
         self.id = id
         self.title = title
         self.lessonDescription = description
@@ -36,6 +37,7 @@ final class Lesson {
         self.sourceURL = sourceURL
         self.createdDate = Date()
         self.audioURL = audioURL
+        self.isFree = isFree
         self.sentences = []
     }
 
