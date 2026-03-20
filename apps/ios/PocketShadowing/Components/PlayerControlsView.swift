@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PlayerControlsView: View {
     let isPlaying: Bool
+    let isCompleted: Bool
     let canGoBack: Bool
     let canGoForward: Bool
     let onPlayPause: () -> Void
@@ -29,7 +30,7 @@ struct PlayerControlsView: View {
 
             // Play/Pause button
             Button(action: onPlayPause) {
-                Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                Image(systemName: isCompleted ? "repeat.circle.fill" : isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: AudioConstants.controlButtonSize))
                     .foregroundColor(.appPrimary)
             }
@@ -51,6 +52,7 @@ struct PlayerControlsView: View {
     VStack(spacing: 40) {
         PlayerControlsView(
             isPlaying: false,
+            isCompleted: false,
             canGoBack: true,
             canGoForward: true,
             onPlayPause: {},
@@ -60,6 +62,7 @@ struct PlayerControlsView: View {
 
         PlayerControlsView(
             isPlaying: true,
+            isCompleted: false,
             canGoBack: false,
             canGoForward: false,
             onPlayPause: {},

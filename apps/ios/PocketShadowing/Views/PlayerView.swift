@@ -14,7 +14,7 @@ struct PlayerView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var viewModel: PlayerViewModel
-    @State private var showDebugMenu = false
+    @State private var showSettings = false
     @State private var showCompletionPopup = false
     @State private var isLocked = false
 
@@ -84,9 +84,16 @@ struct PlayerView: View {
                         // Player controls in the center
                         PlayerControlsView(
                             isPlaying: viewModel.isPlaying,
+                            isCompleted: viewModel.isCompleted,
                             canGoBack: viewModel.canGoToPrevious,
                             canGoForward: viewModel.canGoToNext,
-                            onPlayPause: { viewModel.togglePlayPause() },
+                            onPlayPause: {
+                                if viewModel.isCompleted {
+                                    viewModel.restart()
+                                } else {
+                                    viewModel.togglePlayPause()
+                                }
+                            },
                             onRewind: { viewModel.goToPreviousSentence() },
                             onForward: { viewModel.goToNextSentence() }
                         )
@@ -126,9 +133,9 @@ struct PlayerView: View {
 
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    showDebugMenu = true
+                    showSettings = true
                 } label: {
-                    Image(systemName: "info.circle")
+                    Image(systemName: "gearshape")
                 }
                 .disabled(isLocked)
             }
@@ -159,8 +166,8 @@ struct PlayerView: View {
                 }
             }
         }
-        .sheet(isPresented: $showDebugMenu) {
-            AudioDeviceDebugView(viewModel: viewModel)
+        .sheet(isPresented: $showSettings) {
+            PlayerSettingsView()
         }
         .onAppear {
             viewModel.setup()
@@ -169,7 +176,7 @@ struct PlayerView: View {
             viewModel.cleanup()
         }
         .onChange(of: viewModel.isCompleted) { _, isCompleted in
-            if isCompleted {
+            if isCompleted && !UserSettings.shared.isLoopEnabled {
                 showCompletionPopup = true
             }
         }
@@ -199,81 +206,32 @@ struct PlayerView: View {
     }
 }
 
-// MARK: - Audio Device Debug View
+// MARK: - Player Settings View
 
-struct AudioDeviceDebugView: View {
+struct PlayerSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    let viewModel: PlayerViewModel
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background layer
                 GradientBackground()
 
-                // Content layer
                 List {
-                Section("Current Audio Devices") {
-                    LabeledContent("Speaker/Output") {
-                        Text(viewModel.currentOutputDevice)
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundColor(.primary)
+                    Section {
+                        Toggle(L10n.loop, isOn: Binding(
+                            get: { UserSettings.shared.isLoopEnabled },
+                            set: { UserSettings.shared.isLoopEnabled = $0 }
+                        ))
+                        .listRowBackground(Color(red: 0x22/255, green: 0x0D/255, blue: 0x34/255))
                     }
-
-                    LabeledContent("Microphone/Input") {
-                        Text(viewModel.currentInputDevice)
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundColor(.primary)
-                    }
-                }
-
-                Section("Available Input Devices") {
-                    if viewModel.availableInputDevices.isEmpty {
-                        Text("No input devices found")
-                            .foregroundColor(.secondary)
-                    } else {
-                        ForEach(viewModel.availableInputDevices, id: \.self) { device in
-                            HStack {
-                                Text(device)
-                                    .font(.system(.body, design: .monospaced))
-                                Spacer()
-                                if device == viewModel.currentInputDevice {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                }
-                            }
-                            .listRowBackground(Color.clear)
-                        }
-                    }
-                }
-
-                Section("Debug Info") {
-                    LabeledContent("Mic Permission") {
-                        Text(viewModel.hasMicrophonePermission ? "✓ Granted" : "✗ Denied")
-                            .foregroundColor(viewModel.hasMicrophonePermission ? .green : .red)
-                    }
-
-                    LabeledContent("Speech Recognition") {
-                        Text(viewModel.hasSpeechRecognitionPermission ? "✓ Granted" : "✗ Denied")
-                            .foregroundColor(viewModel.hasSpeechRecognitionPermission ? .green : .red)
-                    }
-
-                    LabeledContent("Recording Status") {
-                        Text(viewModel.isRecording ? "🔴 Recording" : "⚫️ Not Recording")
-                    }
-
-                    LabeledContent("Playback Status") {
-                        Text(viewModel.isPlaying ? "▶️ Playing" : "⏸️ Paused")
-                    }
-                }
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Audio Device Debug")
+            .navigationTitle(L10n.settings)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button(L10n.done) {
                         dismiss()
                     }
                 }

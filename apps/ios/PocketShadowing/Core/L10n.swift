@@ -604,6 +604,16 @@ enum L10n {
         "es": "Desliza para desbloquear"
     ])}
 
+    static var loop: String { tr([
+        "en": "Loop",
+        "ja": "ループ",
+        "fr": "Boucle",
+        "zh-Hans": "循环",
+        "zh-Hant": "循環",
+        "ko": "반복",
+        "es": "Bucle"
+    ])}
+
     // MARK: - Completion
 
     static var lessonComplete: String { tr([

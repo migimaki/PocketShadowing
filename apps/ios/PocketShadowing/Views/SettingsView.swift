@@ -27,6 +27,7 @@ struct SettingsView: View {
                                 .tag(language.code)
                         }
                     }
+                    .listRowBackground(Color(red: 0x22/255, green: 0x0D/255, blue: 0x34/255))
                 }
 
                 Section {
@@ -43,6 +44,7 @@ struct SettingsView: View {
                             }
                         }
                     }
+                    .listRowBackground(Color(red: 0x22/255, green: 0x0D/255, blue: 0x34/255))
                 }
 
                 Section {
@@ -58,6 +60,7 @@ struct SettingsView: View {
                             Spacer()
                         }
                     }
+                    .listRowBackground(Color(red: 0x22/255, green: 0x0D/255, blue: 0x34/255))
                 }
                 }
                 .scrollContentBackground(.hidden)

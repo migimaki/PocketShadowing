@@ -71,22 +71,6 @@ struct CompletionPopupView: View {
             }
             .padding(.vertical, 16)
 
-            // New best score indicator
-            if accuracyScore >= bestAccuracyScore || speedScore >= bestSpeedScore {
-                HStack(spacing: 6) {
-                    Image(systemName: "trophy.fill")
-                        .foregroundColor(.yellow)
-                    Text(L10n.newBestScore)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.yellow.opacity(0.15))
-                .cornerRadius(8)
-            }
-
             // Buttons
             VStack(spacing: 12) {
                 // Try Again button
@@ -98,8 +82,8 @@ struct CompletionPopupView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
+                    .background(Color.appPrimary)
+                    .foregroundColor(.black)
                     .cornerRadius(12)
                 }
 
@@ -109,14 +93,14 @@ struct CompletionPopupView: View {
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color(.systemGray5))
+                        .background(Color(red: 0x5B / 255.0, green: 0x4E / 255.0, blue: 0x66 / 255.0))
                         .foregroundColor(.primary)
                         .cornerRadius(12)
                 }
             }
         }
         .padding(24)
-        .background(Color(.systemBackground))
+        .background(Color(red: 0x22 / 255.0, green: 0x0D / 255.0, blue: 0x34 / 255.0))
         .cornerRadius(20)
         .shadow(radius: 20)
         .padding(40)

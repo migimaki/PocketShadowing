@@ -18,6 +18,7 @@
 import Foundation
 import SwiftData
 import AVFoundation
+
 import UIKit
 
 @Observable
@@ -28,6 +29,9 @@ class PlayerViewModel {
     private let recordingService: AudioRecordingService
     private let speechRecognitionService: SpeechRecognitionService
     private let audioSessionManager: AudioSessionManager
+
+    // Loop completion sound (separate from audioPlayerService to avoid delegate interference)
+    private var loopSoundPlayer: AVAudioPlayer?
 
     // Speech-based silence detection
     private var speechTimeoutTimer: Timer?
@@ -473,8 +477,19 @@ class PlayerViewModel {
         if currentSentenceIndex >= totalSentences - 1 {
             // Lesson complete - update best score
             updateBestScore()
-            pause()
-            currentSentenceIndex = totalSentences - 1
+
+            if UserSettings.shared.isLoopEnabled {
+                // Loop mode: pause first to release audio session, play sound, then restart
+                pause()
+                currentSentenceIndex = totalSentences - 1
+                playLoopCompletionSound()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.restart()
+                }
+            } else {
+                pause()
+                currentSentenceIndex = totalSentences - 1
+            }
         } else {
             // Move to next sentence
             currentSentenceIndex += 1
@@ -557,6 +572,12 @@ class PlayerViewModel {
           - Best Accuracy: \(String(format: "%.1f", progress.bestAccuracyScore))/100
           - Best Speed: \(String(format: "%.1f", progress.bestSpeedScore))/100
         """)
+    }
+
+    private func playLoopCompletionSound() {
+        guard let url = Bundle.main.url(forResource: "loop_complete", withExtension: "mp3") else { return }
+        loopSoundPlayer = try? AVAudioPlayer(contentsOf: url)
+        loopSoundPlayer?.play()
     }
 }
 

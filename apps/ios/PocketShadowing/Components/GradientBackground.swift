@@ -9,19 +9,15 @@ import SwiftUI
 
 struct GradientBackground: View {
     var body: some View {
-        ZStack {
-            // Fallback color (dark blue) in case image doesn't load
-            Color(red: 0.05, green: 0.05, blue: 0.15)
-
-            // Custom background image
-            GeometryReader { geometry in
-                Image("background")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-            }
-        }
+        LinearGradient(
+            colors: [
+                Color(red: 0x46 / 255.0, green: 0x67 / 255.0, blue: 0xA8 / 255.0),
+                Color(red: 0x5A / 255.0, green: 0x48 / 255.0, blue: 0x99 / 255.0),
+                Color(red: 0x3B / 255.0, green: 0x29 / 255.0, blue: 0x59 / 255.0)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
         .ignoresSafeArea()
     }
 }

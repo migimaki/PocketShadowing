@@ -18,6 +18,10 @@ class UserSettings {
     @ObservationIgnored
     @AppStorage("nativeLanguage") var nativeLanguage: String = "en"
 
+    /// Whether loop mode is enabled (auto-restart lesson without showing score)
+    @ObservationIgnored
+    @AppStorage("isLoopEnabled") var isLoopEnabled: Bool = false
+
     /// Learning language is hard-coded to English
     /// This constant ensures consistency across the app
     static let learningLanguage: String = "en"

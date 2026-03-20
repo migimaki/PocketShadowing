@@ -84,7 +84,7 @@ struct SentencesScrollView: View {
         } else if index < currentIndex {
             return .white       // White for past sentences
         } else {
-            return .secondary   // Gray for future sentences
+            return .white.opacity(0.2)  // White 20% for future sentences
         }
     }
 
