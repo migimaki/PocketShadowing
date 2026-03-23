@@ -63,6 +63,8 @@ export interface Series {
   gemini_tts_alt_prompt?: string;
   // Batch assignment for multi-cron scheduling
   batch_number?: number;
+  // Weekday scheduling: array of days (0=Sun..6=Sat), NULL = every day
+  generation_days?: number[] | null;
   created_at?: string;
   updated_at?: string;
 }

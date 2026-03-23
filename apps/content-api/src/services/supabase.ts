@@ -155,6 +155,26 @@ export async function getSeriesById(seriesId: string): Promise<Series | null> {
 }
 
 /**
+ * Filters series to only include those scheduled for today's day of week (UTC).
+ * Series with generation_days = NULL are included every day.
+ */
+function filterByGenerationDay(series: Series[]): Series[] {
+  const today = new Date().getUTCDay(); // 0=Sun..6=Sat
+  const filtered = series.filter(s =>
+    s.generation_days == null || s.generation_days.map(Number).includes(today)
+  );
+  const skipped = series.length - filtered.length;
+  if (skipped > 0) {
+    logger.info(`Skipped ${skipped} series not scheduled for today (UTC day ${today})`, {
+      skippedSeries: series
+        .filter(s => s.generation_days != null && !s.generation_days.map(Number).includes(today))
+        .map(s => s.name),
+    });
+  }
+  return filtered;
+}
+
+/**
  * Fetches all active series
  */
 export async function getAllActiveSeries(): Promise<Series[]> {
@@ -171,7 +191,7 @@ export async function getAllActiveSeries(): Promise<Series[]> {
     }
 
     logger.debug(`Fetched ${data.length} series`);
-    return data as Series[];
+    return filterByGenerationDay(data as Series[]);
   } catch (error) {
     logger.error("Error fetching all series", error);
     throw error;
@@ -196,7 +216,7 @@ export async function getSeriesByBatch(batchNumber: number): Promise<Series[]> {
     }
 
     logger.debug(`Fetched ${data.length} series for batch ${batchNumber}`);
-    return data as Series[];
+    return filterByGenerationDay(data as Series[]);
   } catch (error) {
     logger.error(`Error fetching series for batch ${batchNumber}`, error);
     throw error;
