@@ -264,6 +264,11 @@ struct ChannelListView: View {
                 channelMap: channelMap,
                 translations: translations
             )
+
+            // Force SwiftData to update inverse relationships (channel.lessons)
+            // and trigger a re-render so the UI reflects new lessons
+            modelContext.processPendingChanges()
+            translationRefreshId = UUID()
         } catch {
             print("Failed to fetch lessons: \(error)")
         }

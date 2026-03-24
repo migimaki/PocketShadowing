@@ -112,49 +112,47 @@ class ScoringService {
     }
 
     private static func alignWords(_ original: [String], _ recognized: [String]) -> [WordPair] {
+        let n = original.count
+        let m = recognized.count
+
+        guard n > 0, m > 0 else { return [] }
+
+        // Build LCS DP table
+        var dp = Array(repeating: Array(repeating: 0, count: m + 1), count: n + 1)
+        for i in 1...n {
+            for j in 1...m {
+                if wordsMatch(original[i - 1], recognized[j - 1]) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1
+                } else {
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+                }
+            }
+        }
+
+        // Backtrack to find which recognized words are LCS matches
+        var matchedRecIndices = Set<Int>()
+        var i = n, j = m
+        while i > 0 && j > 0 {
+            if wordsMatch(original[i - 1], recognized[j - 1]) {
+                matchedRecIndices.insert(j - 1)
+                i -= 1
+                j -= 1
+            } else if dp[i - 1][j] > dp[i][j - 1] {
+                i -= 1
+            } else {
+                j -= 1
+            }
+        }
+
+        // Build result: each recognized word is either a match or mismatch
         var result: [WordPair] = []
-        var origIndex = 0
-        var recIndex = 0
-
-        while recIndex < recognized.count {
-            let recWord = recognized[recIndex]
-
-            // Try to find matching word in remaining original words (look ahead up to 3 words)
-            var foundMatch = false
-            for lookAhead in 0..<min(3, original.count - origIndex) {
-                let origWord = original[origIndex + lookAhead]
-
-                if wordsMatch(origWord, recWord) {
-                    // Found a match - skip any unmatched original words before this
-                    origIndex += lookAhead
-
-                    result.append(WordPair(
-                        original: origWord,
-                        recognized: recWord,
-                        matches: true
-                    ))
-                    origIndex += 1
-                    recIndex += 1
-                    foundMatch = true
-                    break
-                }
-            }
-
-            if !foundMatch {
-                // No match found - mark as incorrect
-                let origWord = origIndex < original.count ? original[origIndex] : ""
-                result.append(WordPair(
-                    original: origWord,
-                    recognized: recWord,
-                    matches: false
-                ))
-
-                // Only advance original if we have words left
-                if origIndex < original.count {
-                    origIndex += 1
-                }
-                recIndex += 1
-            }
+        for idx in 0..<m {
+            let isMatch = matchedRecIndices.contains(idx)
+            result.append(WordPair(
+                original: isMatch ? recognized[idx] : "",
+                recognized: recognized[idx],
+                matches: isMatch
+            ))
         }
 
         return result

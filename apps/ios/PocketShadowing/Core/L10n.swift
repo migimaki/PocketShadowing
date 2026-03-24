@@ -418,6 +418,26 @@ enum L10n {
         "es": "GRATIS"
     ])}
 
+    static var freeLessons: String { tr([
+        "en": "Free Lessons",
+        "ja": "無料レッスン",
+        "fr": "Leçons gratuites",
+        "zh-Hans": "免费课程",
+        "zh-Hant": "免費課程",
+        "ko": "무료 레슨",
+        "es": "Lecciones gratuitas"
+    ])}
+
+    static var allLessons: String { tr([
+        "en": "All Lessons",
+        "ja": "すべてのレッスン",
+        "fr": "Toutes les leçons",
+        "zh-Hans": "所有课程",
+        "zh-Hant": "所有課程",
+        "ko": "모든 레슨",
+        "es": "Todas las lecciones"
+    ])}
+
     static var loadMore: String { tr([
         "en": "Load More",
         "ja": "もっと見る",
@@ -426,6 +446,16 @@ enum L10n {
         "zh-Hant": "載入更多",
         "ko": "더 보기",
         "es": "Cargar más"
+    ])}
+
+    static var seeAll: String { tr([
+        "en": "See All",
+        "ja": "すべて表示",
+        "fr": "Tout voir",
+        "zh-Hans": "查看全部",
+        "zh-Hant": "查看全部",
+        "ko": "모두 보기",
+        "es": "Ver todo"
     ])}
 
     static var noLessons: String { tr([

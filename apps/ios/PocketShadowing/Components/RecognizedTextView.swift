@@ -37,19 +37,16 @@ struct RecognizedTextView: View {
                 result += AttributedString(" ")
             }
 
-            var wordString = AttributedString(wordPair.recognized)
-
-            // Color based on match
-            if wordPair.matches {
-                wordString.foregroundColor = .green
-            } else if wordPair.recognized == "---" {
-                // Skipped word in original
-                continue
+            if wordPair.isMissing {
+                // Missing original word shown in white 20% opacity
+                var wordString = AttributedString(wordPair.original)
+                wordString.foregroundColor = Color.white.opacity(0.2)
+                result += wordString
             } else {
-                wordString.foregroundColor = .red
+                var wordString = AttributedString(wordPair.recognized)
+                wordString.foregroundColor = wordPair.matches ? .green : Color(red: 1.0, green: 0.502, blue: 0.322)
+                result += wordString
             }
-
-            result += wordString
         }
 
         return result
@@ -66,56 +63,47 @@ struct RecognizedTextView: View {
         let original: String
         let recognized: String
         let matches: Bool
+        let isMissing: Bool
     }
 
     private func alignWords(_ original: [String], _ recognized: [String]) -> [WordPair] {
-        var result: [WordPair] = []
-        var origIndex = 0
-        var recIndex = 0
+        let n = original.count
+        let m = recognized.count
 
-        while recIndex < recognized.count {
-            let recWord = recognized[recIndex]
+        guard n > 0, m > 0 else { return [] }
 
-            // Try to find matching word in remaining original words (look ahead up to 3 words)
-            var foundMatch = false
-            for lookAhead in 0..<min(3, original.count - origIndex) {
-                let origWord = original[origIndex + lookAhead]
-
-                if wordsMatch(origWord, recWord) {
-                    // Found a match
-                    // Skip any unmatched original words before this
-                    origIndex += lookAhead
-
-                    result.append(WordPair(
-                        original: origWord,
-                        recognized: recWord,
-                        matches: true
-                    ))
-                    origIndex += 1
-                    recIndex += 1
-                    foundMatch = true
-                    break
+        // Build LCS DP table
+        var dp = Array(repeating: Array(repeating: 0, count: m + 1), count: n + 1)
+        for i in 1...n {
+            for j in 1...m {
+                if wordsMatch(original[i - 1], recognized[j - 1]) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1
+                } else {
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
                 }
-            }
-
-            if !foundMatch {
-                // No match found - mark as incorrect
-                let origWord = origIndex < original.count ? original[origIndex] : ""
-                result.append(WordPair(
-                    original: origWord,
-                    recognized: recWord,
-                    matches: false
-                ))
-
-                // Only advance original if we have words left
-                if origIndex < original.count {
-                    origIndex += 1
-                }
-                recIndex += 1
             }
         }
 
-        return result
+        // Backtrack to build interleaved alignment (in reverse)
+        var reversed: [WordPair] = []
+        var i = n, j = m
+        while i > 0 || j > 0 {
+            if i > 0 && j > 0 && wordsMatch(original[i - 1], recognized[j - 1]) {
+                reversed.append(WordPair(original: original[i - 1], recognized: recognized[j - 1], matches: true, isMissing: false))
+                i -= 1
+                j -= 1
+            } else if i > 0 && (j == 0 || dp[i - 1][j] >= dp[i][j - 1]) {
+                // Original word was skipped (missing from recognized)
+                reversed.append(WordPair(original: original[i - 1], recognized: "", matches: false, isMissing: true))
+                i -= 1
+            } else {
+                // Extra recognized word (not in original)
+                reversed.append(WordPair(original: "", recognized: recognized[j - 1], matches: false, isMissing: false))
+                j -= 1
+            }
+        }
+
+        return reversed.reversed()
     }
 
     private func wordsMatch(_ word1: String, _ word2: String) -> Bool {
