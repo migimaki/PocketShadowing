@@ -131,7 +131,15 @@ Please provide the content now, starting with a title on the first line, followe
     }
 
     const title = allLines[0];
-    const lines = allLines.slice(1);
+    let lines = allLines.slice(1);
+
+    // Enforce line_count - truncate if Gemini returned too many lines
+    if (lines.length > lineCount) {
+      logger.warn(`Gemini returned ${lines.length} lines, truncating to ${lineCount}`, {
+        seriesName: series?.name,
+      });
+      lines = lines.slice(0, lineCount);
+    }
 
     logger.info('Successfully parsed special day content', {
       title,

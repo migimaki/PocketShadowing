@@ -66,7 +66,8 @@ export async function getOrCreateChannel(seriesId: string): Promise<string> {
         description: series.concept,
         icon_name: 'globe.europe.africa.fill',
         series_id: seriesId,
-        cover_image_url: series.cover_image_url
+        cover_image_url: series.cover_image_url,
+        genre: series.difficulty_level.charAt(0).toUpperCase() + series.difficulty_level.slice(1),
       }])
       .select()
       .single();
