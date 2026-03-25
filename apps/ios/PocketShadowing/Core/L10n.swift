@@ -204,64 +204,114 @@ enum L10n {
 
     // MARK: - Onboarding
 
-    static var onboardingTitle1: String { tr([
-        "en": "Listen & Shadow",
-        "ja": "聞いてシャドーイング",
-        "fr": "Écouter et répéter",
-        "zh-Hans": "听力与跟读",
-        "zh-Hant": "聽力與跟讀",
-        "ko": "듣기 & 섀도잉",
-        "es": "Escucha y repite"
+    static var onboardingHeadphoneTitle: String { tr([
+        "en": "Use headphones",
+        "ja": "ヘッドホンを使用",
+        "fr": "Utilisez des écouteurs",
+        "zh-Hans": "请使用耳机",
+        "zh-Hant": "請使用耳機",
+        "ko": "헤드폰을 사용하세요",
+        "es": "Usa auriculares"
     ])}
 
-    static var onboardingDesc1: String { tr([
-        "en": "Listen to native English speakers and practice speaking along with them. Your voice is recognized in real-time to help you improve.",
-        "ja": "ネイティブの英語を聞いて、一緒に話す練習をしましょう。リアルタイムの音声認識であなたの上達をサポートします。",
-        "fr": "Écoutez des locuteurs natifs anglais et entraînez-vous à parler avec eux. Votre voix est reconnue en temps réel pour vous aider à progresser.",
-        "zh-Hans": "聆听英语母语者的发音，跟着一起练习口语。实时语音识别帮助你不断进步。",
-        "zh-Hant": "聆聽英語母語者的發音，跟著一起練習口說。即時語音辨識幫助你不斷進步。",
-        "ko": "원어민의 영어를 듣고 따라 말하는 연습을 하세요. 실시간 음성 인식으로 실력 향상을 도와드립니다.",
-        "es": "Escucha a hablantes nativos de inglés y practica hablando con ellos. Tu voz se reconoce en tiempo real para ayudarte a mejorar."
+    static var onboardingHeadphoneMain: String { tr([
+        "en": "For accurate voice detection, please use headphones or earphones.",
+        "ja": "正確な音声認識のために、ヘッドホンまたはイヤホンをご使用ください。",
+        "fr": "Pour une détection vocale précise, veuillez utiliser des écouteurs ou un casque.",
+        "zh-Hans": "为了准确检测您的声音，请使用耳机。",
+        "zh-Hant": "為了準確偵測您的聲音，請使用耳機。",
+        "ko": "정확한 음성 인식을 위해 헤드폰 또는 이어폰을 사용해 주세요.",
+        "es": "Para una detección de voz precisa, usa auriculares o audífonos."
     ])}
 
-    static var onboardingTitle2: String { tr([
-        "en": "Track Your Progress",
-        "ja": "進捗を確認",
-        "fr": "Suivez vos progrès",
-        "zh-Hans": "追踪你的进步",
-        "zh-Hant": "追蹤你的進步",
-        "ko": "학습 진도 확인",
-        "es": "Sigue tu progreso"
+    static var onboardingHeadphoneSub: String { tr([
+        "en": "If you use speakers, the app may pick up the audio instead of your voice.",
+        "ja": "スピーカーを使用すると、あなたの声ではなく音声が拾われることがあります。",
+        "fr": "Si vous utilisez des haut-parleurs, l'application risque de capter le son au lieu de votre voix.",
+        "zh-Hans": "如果使用扬声器，应用可能会录到播放的音频而非您的声音。",
+        "zh-Hant": "如果使用揚聲器，應用可能會錄到播放的音訊而非您的聲音。",
+        "ko": "스피커를 사용하면 앱이 음성 대신 오디오를 인식할 수 있습니다.",
+        "es": "Si usas altavoces, la app puede captar el audio en lugar de tu voz."
     ])}
 
-    static var onboardingDesc2: String { tr([
-        "en": "Get accuracy and speed scores for each practice session. Beat your best scores and watch your English improve over time.",
-        "ja": "各練習セッションの正確さとスピードのスコアを確認。自己ベストを更新して、英語力の向上を実感しましょう。",
-        "fr": "Obtenez des scores de précision et de vitesse pour chaque session. Battez vos meilleurs scores et observez vos progrès en anglais.",
-        "zh-Hans": "每次练习都会获得准确度和速度评分。不断刷新最佳成绩，见证你的英语进步。",
-        "zh-Hant": "每次練習都會獲得準確度和速度評分。不斷刷新最佳成績，見證你的英語進步。",
-        "ko": "각 연습 세션의 정확도와 속도 점수를 확인하세요. 최고 점수를 갱신하며 영어 실력의 향상을 느껴보세요.",
-        "es": "Obtén puntuaciones de precisión y velocidad en cada sesión. Supera tus mejores marcas y observa cómo mejora tu inglés."
+    static var onboardingHeadphoneButton: String { tr([
+        "en": "I'm using headphones",
+        "ja": "ヘッドホンを使用しています",
+        "fr": "J'utilise des écouteurs",
+        "zh-Hans": "我正在使用耳机",
+        "zh-Hant": "我正在使用耳機",
+        "ko": "헤드폰을 사용하고 있습니다",
+        "es": "Estoy usando auriculares"
     ])}
 
-    static var onboardingTitle3: String { tr([
-        "en": "Learn Anywhere",
-        "ja": "いつでもどこでも学習",
-        "fr": "Apprenez partout",
-        "zh-Hans": "随时随地学习",
-        "zh-Hant": "隨時隨地學習",
-        "ko": "언제 어디서나 학습",
-        "es": "Aprende en cualquier lugar"
+    static var onboardingTryShadowingTitle: String { tr([
+        "en": "Try shadowing",
+        "ja": "シャドーイングを体験",
+        "fr": "Essayez le shadowing",
+        "zh-Hans": "试试跟读",
+        "zh-Hant": "試試跟讀",
+        "ko": "섀도잉을 체험해보세요",
+        "es": "Prueba el shadowing"
     ])}
 
-    static var onboardingDesc3: String { tr([
-        "en": "Practice English shadowing anytime, anywhere. Choose from a variety of channels and lessons to match your interests.",
-        "ja": "いつでもどこでも英語のシャドーイングを練習。豊富なチャンネルとレッスンから、興味に合わせて選べます。",
-        "fr": "Pratiquez le shadowing en anglais à tout moment. Choisissez parmi une variété de chaînes et de leçons selon vos centres d'intérêt.",
-        "zh-Hans": "随时随地练习英语跟读。从丰富的频道和课程中选择你感兴趣的内容。",
-        "zh-Hant": "隨時隨地練習英語跟讀。從豐富的頻道和課程中選擇你感興趣的內容。",
-        "ko": "언제 어디서나 영어 섀도잉을 연습하세요. 다양한 채널과 레슨 중 관심 있는 것을 선택할 수 있습니다.",
-        "es": "Practica el shadowing en inglés en cualquier momento y lugar. Elige entre una variedad de canales y lecciones según tus intereses."
+    static var onboardingTryShadowingMain: String { tr([
+        "en": "Listen and repeat what you hear.",
+        "ja": "聞こえた内容をそのまま繰り返しましょう。",
+        "fr": "Écoutez et répétez ce que vous entendez.",
+        "zh-Hans": "听并跟着重复你听到的内容。",
+        "zh-Hant": "聽並跟著重複你聽到的內容。",
+        "ko": "듣고 들은 내용을 따라 말해보세요.",
+        "es": "Escucha y repite lo que oyes."
+    ])}
+
+    static var onboardingTryShadowingSub: String { tr([
+        "en": "Don't worry about being perfect. Just follow the rhythm.",
+        "ja": "完璧でなくても大丈夫。リズムに乗って話しましょう。",
+        "fr": "Ne vous souciez pas d'être parfait. Suivez simplement le rythme.",
+        "zh-Hans": "不用担心说得不完美，跟上节奏就好。",
+        "zh-Hant": "不用擔心說得不完美，跟上節奏就好。",
+        "ko": "완벽하지 않아도 괜찮아요. 리듬을 따라가세요.",
+        "es": "No te preocupes por ser perfecto. Solo sigue el ritmo."
+    ])}
+
+    static var onboardingReadyTitle: String { tr([
+        "en": "You are ready",
+        "ja": "準備完了",
+        "fr": "Vous êtes prêt",
+        "zh-Hans": "准备就绪",
+        "zh-Hant": "準備就緒",
+        "ko": "준비 완료",
+        "es": "Estás listo"
+    ])}
+
+    static var onboardingReadyMain: String { tr([
+        "en": "Courses are available for every level.",
+        "ja": "あらゆるレベルのコースをご用意しています。",
+        "fr": "Des cours sont disponibles pour chaque niveau.",
+        "zh-Hans": "我们为每个水平都准备了课程。",
+        "zh-Hant": "我們為每個程度都準備了課程。",
+        "ko": "모든 레벨에 맞는 코스가 준비되어 있습니다.",
+        "es": "Hay cursos disponibles para cada nivel."
+    ])}
+
+    static var onboardingReadySub: String { tr([
+        "en": "Start with what feels comfortable.",
+        "ja": "自分に合ったレベルから始めましょう。",
+        "fr": "Commencez par ce qui vous semble confortable.",
+        "zh-Hans": "从你觉得舒适的内容开始吧。",
+        "zh-Hant": "從你覺得舒適的內容開始吧。",
+        "ko": "편안하게 느껴지는 것부터 시작하세요.",
+        "es": "Empieza con lo que te resulte cómodo."
+    ])}
+
+    static var startLearning: String { tr([
+        "en": "Start learning",
+        "ja": "学習を始める",
+        "fr": "Commencer à apprendre",
+        "zh-Hans": "开始学习",
+        "zh-Hant": "開始學習",
+        "ko": "학습 시작",
+        "es": "Empezar a aprender"
     ])}
 
     static var getStarted: String { tr([
