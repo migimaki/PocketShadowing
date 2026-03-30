@@ -63,7 +63,7 @@ export async function getOrCreateChannel(seriesId: string): Promise<string> {
       .from("channels")
       .insert([{
         title: series.name,
-        description: series.concept,
+        description: series.name,
         icon_name: 'globe.europe.africa.fill',
         series_id: seriesId,
         cover_image_url: series.cover_image_url,
@@ -83,7 +83,7 @@ export async function getOrCreateChannel(seriesId: string): Promise<string> {
       await generateAndStoreChannelTranslations(
         newChannel.id,
         series.name,
-        series.concept
+        series.name
       );
     } catch (translationError) {
       // Don't fail channel creation if translations fail
@@ -185,6 +185,7 @@ export async function getAllActiveSeries(): Promise<Series[]> {
     const { data, error } = await supabase
       .from("series")
       .select("*")
+      .eq("is_archived", false)
       .order("name", { ascending: true });
 
     if (error) {
@@ -210,6 +211,7 @@ export async function getSeriesByBatch(batchNumber: number): Promise<Series[]> {
       .from("series")
       .select("*")
       .eq("batch_number", batchNumber)
+      .eq("is_archived", false)
       .order("name", { ascending: true });
 
     if (error) {

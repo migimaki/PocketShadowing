@@ -49,22 +49,22 @@ export interface VoiceAlternationConfig {
 export interface Series {
   id: string;
   name: string;
-  concept: string;
+  generation_prompt: string;
   cover_image_url?: string;
   line_count: number;
   difficulty_level: DifficultyLevel;
-  ai_generation_prompt?: string;
   // Voice configuration
   enable_voice_alternation?: boolean;
   default_voice_name?: string;
   alternate_voice_name?: string;
-  // Gemini-TTS prompts (English only)
-  gemini_tts_prompt?: string;
-  gemini_tts_alt_prompt?: string;
+  // TTS prompt (English only)
+  tts_prompt?: string;
   // Batch assignment for multi-cron scheduling
   batch_number?: number;
   // Weekday scheduling: array of days (0=Sun..6=Sat), NULL = every day
   generation_days?: number[] | null;
+  // Archive flag: when true, generation is skipped
+  is_archived?: boolean;
   created_at?: string;
   updated_at?: string;
 }

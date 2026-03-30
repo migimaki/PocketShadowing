@@ -150,7 +150,7 @@ export default async function handler(
         }
 
         logger.info(`Series loaded: ${series.name}`, {
-          concept: series.concept,
+          generation_prompt: series.generation_prompt.substring(0, 80) + (series.generation_prompt.length > 80 ? '...' : ''),
           lineCount: series.line_count,
           difficulty: series.difficulty_level,
         });

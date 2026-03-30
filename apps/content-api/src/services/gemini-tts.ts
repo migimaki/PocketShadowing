@@ -67,8 +67,8 @@ function getGeminiTTSConfig(series?: Series): GeminiTTSConfig {
 
   // Get prompt from series or use difficulty-based default
   let defaultPrompt: string;
-  if (series?.gemini_tts_prompt) {
-    defaultPrompt = `Generate speech in English. ${series.gemini_tts_prompt}`;
+  if (series?.tts_prompt) {
+    defaultPrompt = `Generate speech in English. ${series.tts_prompt}`;
   } else {
     defaultPrompt = getDefaultPrompt(series?.difficulty_level);
   }
@@ -79,8 +79,8 @@ function getGeminiTTSConfig(series?: Series): GeminiTTSConfig {
   if (enableAlternation) {
     alternateVoice = getValidVoice(series?.alternate_voice_name, 'Kore');
 
-    if (series?.gemini_tts_alt_prompt) {
-      alternatePrompt = `Generate speech in English. ${series.gemini_tts_alt_prompt}`;
+    if (series?.tts_prompt) {
+      alternatePrompt = `Generate speech in English. ${series.tts_prompt}`;
     } else {
       const { defaultVoicePrompt, alternateVoicePrompt } = getAlternationPrompts();
       defaultPrompt = defaultVoicePrompt;
@@ -246,8 +246,7 @@ export async function generateAudioFiles(
       defaultVoice: config.speaker,
       alternateVoice: config.alternateSpeaker,
       alternationEnabled: config.enableAlternation,
-      hasCustomPrompt: !!series?.gemini_tts_prompt,
-      hasCustomAltPrompt: !!series?.gemini_tts_alt_prompt,
+      hasCustomPrompt: !!series?.tts_prompt,
     });
 
     const rateLimiter = new RateLimiter(10, 1000);

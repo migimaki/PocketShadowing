@@ -47,7 +47,7 @@ export async function generateSpecialDayContent(date: Date = new Date(), series?
     logger.info('Initializing FRESH Gemini AI instance for content generation...', {
       date: date.toISOString(),
       seriesName: series?.name || 'default',
-      seriesConcept: series?.concept ? series.concept.substring(0, 50) + '...' : 'N/A'
+      generationPrompt: series?.generation_prompt ? series.generation_prompt.substring(0, 50) + '...' : 'N/A'
     });
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -64,19 +64,18 @@ export async function generateSpecialDayContent(date: Date = new Date(), series?
 
     const lineCount = series?.line_count || 10;
     const difficulty = series?.difficulty_level || 'intermediate';
-    const seriesConcept = series?.concept || 'Daily news content about special days and current events';
+    const generationPrompt = series?.generation_prompt || 'Daily news content about special days and current events';
     const seriesName = series?.name || 'Daily Content';
-    const additionalPrompt = series?.ai_generation_prompt || '';
 
     const prompt = `You are an English learning content creator. Your task is to create educational content about today's date: ${dateStr}.
 
 IMPORTANT - SERIES CONTEXT:
 This content is for the series: "${seriesName}"
-Series concept: ${seriesConcept}
+${generationPrompt}
 
-FOCUS EXCLUSIVELY on this series concept. Do NOT mix concepts from other series.
+FOCUS EXCLUSIVELY on this series context. Do NOT mix concepts from other series.
 
-Research what special events, holidays, historical events, or interesting facts are associated with this date THAT FIT THIS SERIES CONCEPT, and create an engaging lesson for English learners.
+Research what special events, holidays, historical events, or interesting facts are associated with this date THAT FIT THIS SERIES CONTEXT, and create an engaging lesson for English learners.
 
 CONTENT REQUIREMENTS:
 1. Start with a compelling title about the special day/event
@@ -94,7 +93,6 @@ IMPORTANT FORMATTING REQUIREMENTS:
 6. Just put one sentence per line
 7. Generate EXACTLY ${lineCount} lines (one line will become one audio file)
 
-${additionalPrompt ? `ADDITIONAL INSTRUCTIONS:\n${additionalPrompt}\n` : ''}
 Please provide the content now, starting with a title on the first line, followed by the educational content with each sentence on a new line:`;
 
     logger.info('Sending request to Gemini AI...');
