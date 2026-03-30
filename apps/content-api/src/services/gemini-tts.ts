@@ -130,7 +130,7 @@ ${prompt}`;
     voice: {
       languageCode: LANGUAGE_CODE,
       name: speaker,
-      modelName: 'gemini-2.5-flash-tts',
+      modelName: 'gemini-2.5-pro-tts',
     },
     audioConfig: {
       audioEncoding: 'MP3',
