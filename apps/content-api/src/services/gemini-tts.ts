@@ -1,6 +1,6 @@
 /**
  * Gemini-TTS Service
- * Generates English audio files using Google's Gemini-TTS API (gemini-2.5-flash-tts)
+ * Generates English audio files using Google's Gemini-TTS API (gemini-2.5-pro-tts)
  * Sentence-by-sentence generation for accurate audio boundaries
  */
 
@@ -143,7 +143,7 @@ ${prompt}`;
     promptLength: enhancedPrompt.length,
     hasContext: !!contextLines,
     languageCode: LANGUAGE_CODE,
-    model: 'gemini-2.5-flash-tts',
+    model: 'gemini-2.5-pro-tts',
   });
 
   const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
